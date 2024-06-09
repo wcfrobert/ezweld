@@ -1,4 +1,8 @@
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import math
 
 
 class WeldGroup:
@@ -27,64 +31,227 @@ class WeldGroup:
         self.My = None
         self.torsion = None
         
-        # centroid
-        self.xc = None
-        self.yc = None
-        
-        # geometric properties (stress)
+        # geometric properties
+        self.depth = None
+        self.width = None
         self.A = None
-        self.Sx_stress = None
-        self.Sy_stress = None
-        self.Jw_stress = None
-        
-        # geometric properties (force per unit length)
-        self.Lw = None
+        self.x_centroid = None
+        self.y_centroid = None
+        self.Ix = None
+        self.Iy = None
+        self.Ixy = None
+        self.Iz = None
         self.Sx = None
         self.Sy = None
-        self.Jw = None
+        
+        # geometric properties (force per unit length)
+        self.Lw_plf = None
+        self.Ix_plf = None
+        self.Iy_plf = None
+        self.Ixy_plf = None
+        self.Iz_plf = None
+        self.Sx_plf = None
+        self.Sy_plf = None
         
         # dictionary storing discretization of weld group
-        self.dict_welds = {"id":[],
-                           "x":[],
-                           "y":[],
+        self.dict_welds = {"x_centroid":[],
+                           "y_centroid":[],
+                           "x_start":[],
+                           "y_start":[],
+                           "x_end":[],
+                           "y_end":[],
                            "thickness":[],
                            "length":[],
-                           "area":[],
-                           "longitudinal_vec":[]}
-        
-        # the above dict is converted to dataframe for faster query and compute
+                           "area":[]}
         self.df_welds = None
     
     
-    def add_rectangle(self, xo, yo, width, height, thickness=5/16, segmentx="auto", segmenty="auto"):
-        pass
+    def add_rectangle(self, xo, yo, width, height, xsegments, ysegments, thickness=5/16):
+        """
+        Add a rectangular weld group by specifying the bottom left corner + width and height
+        
+        Note: within structural engineering, weld throat thickness is usually not specified
+        until later, and forces are in force/length rather than stress. By default, 
+        assume 5/16 inch throat thickness.
+        """
+        pt1 = [xo, yo]
+        pt2 = [xo+width, yo]
+        pt3 = [xo+width, yo+height]
+        pt4 = [xo, yo+height]
+        
+        self.add_line(start=pt1, end=pt2, segments=xsegments, thickness=thickness)
+        self.add_line(start=pt4, end=pt3, segments=xsegments, thickness=thickness)
+        self.add_line(start=pt1, end=pt4, segments=ysegments, thickness=thickness)
+        self.add_line(start=pt2, end=pt3, segments=ysegments, thickness=thickness)
+            
+        
+    def add_circle(self, xo, yo, diameter, segments, thickness=5/16):
+        """
+        Add a circular weld group by specifying the center + a diameter
+        
+        Note: within structural engineering, weld throat thickness is usually not specified
+        until later, and forces are in force/length rather than stress. By default, 
+        assume 5/16 inch throat thickness.
+        """
+        # handles exception where segment < 4
+        if segments < 4:
+            print("Warning: circular patch must have 4 segments or more!")
+            segments = 4
+        
+        # divide into angle increments from 0 to 360
+        theta_list = np.linspace(0,360,segments+1)
+        theta_list = [x*math.pi/180 for x in theta_list]
+        
+        # get x and y coordinate with equation of circle
+        x_list = [xo+diameter/2*math.cos(theta) for theta in theta_list]
+        y_list = [yo+diameter/2*math.sin(theta) for theta in theta_list]
+        
+        # plot segments
+        for i in range(len(x_list)-1):
+            pt1 = [x_list[i], y_list[i]]
+            pt2 = [x_list[i+1], y_list[i+1]]
+            self.add_line(start=pt1, end=pt2, segments=1, thickness=thickness)
     
     
-    def add_circle(self, xo, yo, diameter, thickness=5/16, segments="auto"):
-        pass
-    
-    
-    def add_line(self, start, end, thickness=5/16, segments="auto"):
+    def add_line(self, start, end, segments, thickness=5/16):
         """
         Add a weld strip by specifying two points. 
         
-        Within structural engineering, weld throat thickness is usually not specified
+        Note: within structural engineering, weld throat thickness is usually not specified
         until later, and forces are in force/length rather than stress. By default, 
         assume 5/16 inch throat thickness.
-        
-        By default, number of segment per strip will be max(L/20, 1 inch)
-        
         """
-        pass
+        # convert into numpy arrays
+        start = np.array(start)
+        end = np.array(end)
+        position_vector = end-start
+        
+        # discretize into N segments (N+1 end points)
+        alpha = np.linspace(0, 1, segments+1)
+        x_ends = start[0] + alpha * position_vector[0]
+        y_ends = start[1] + alpha * position_vector[1]
+        x_center = [(x_ends[i] + x_ends[i+1]) / 2 for i in range(len(x_ends)-1)]
+        y_center = [(y_ends[i] + y_ends[i+1]) / 2 for i in range(len(y_ends)-1)]
+        
+        # calculate lengths
+        length_total = np.linalg.norm(position_vector)
+        length_segments = length_total / (segments)
+        
+        # add to dictionary storing discretization
+        self.dict_welds["x_centroid"] = self.dict_welds["x_centroid"] + list(x_center)
+        self.dict_welds["y_centroid"] = self.dict_welds["y_centroid"] + list(y_center)
+        self.dict_welds["x_start"] = self.dict_welds["x_start"] + list(x_ends[:-1])
+        self.dict_welds["y_start"] = self.dict_welds["y_start"] + list(y_ends[:-1])
+        self.dict_welds["x_end"] = self.dict_welds["x_end"] + list(x_ends[1:])
+        self.dict_welds["y_end"] = self.dict_welds["y_end"] + list(y_ends[1:])
+        self.dict_welds["thickness"] = self.dict_welds["thickness"] + [thickness] * segments
+        self.dict_welds["length"] = self.dict_welds["length"] + [length_segments] * segments
+        self.dict_welds["area"] = self.dict_welds["area"] + [thickness * length_segments] * segments
+    
     
     def update_geometric_properties(self):
-        pass
+        """
+        calculate geometric properties of bolt group.
+        """
+        # calculate depths
+        all_x = self.dict_welds["x_centroid"] + self.dict_welds["x_start"] + self.dict_welds["x_end"]
+        all_y = self.dict_welds["y_centroid"] + self.dict_welds["y_start"] + self.dict_welds["y_end"]
+        
+        # calculate centroid using moment of area equation
+        xA = sum([x*A for x,A in zip(self.dict_welds["x_centroid"],self.dict_welds["area"])])
+        yA = sum([y*A for y,A in zip(self.dict_welds["y_centroid"],self.dict_welds["area"])])
+        self.A = sum(self.dict_welds["area"])
+        self.x_centroid = xA / self.A
+        self.y_centroid = yA / self.A
+        
+        # moment of inertia
+        self.Ix = sum([ A * (y - self.y_centroid)**2 for y,A in zip(self.dict_welds["y_centroid"],self.dict_welds["area"]) ])
+        self.Iy = sum([ A * (x - self.x_centroid)**2 for x,A in zip(self.dict_welds["x_centroid"],self.dict_welds["area"]) ])
+        self.Ixy = sum([ A * (y - self.y_centroid) * (x - self.x_centroid) for x,y,A in zip(self.dict_welds["x_centroid"],self.dict_welds["y_centroid"],self.dict_welds["area"]) ])
+        self.Iz = self.Ix + self.Iy
+        
+        # section modulus
+        self.Sx1 = self.Ix / abs(max(all_y) - self.y_centroid)
+        self.Sx2 = self.Ix / abs(min(all_y) - self.y_centroid)
+        self.Sy1 = self.Iy / abs(max(all_x) - self.x_centroid)
+        self.Sy2 = self.Iy / abs(min(all_x) - self.x_centroid)
+        
+    
     
     def solve(self, Vx=0, Vy=0, Mx=0, My=0, torsion=0, tension=0):
         pass
     
-    def preview(self):
-        pass
     
+    def preview(self):
+        """
+        preview weld group defined by user.
+        """
+        DEFAULT_THICKNESS = 0.25
+        
+        # update geometric property in case it was not run previously
+        self.update_geometric_properties()
+        
+        # normalize thickness
+        t_min = min(self.dict_welds["thickness"])
+        line_thicknesses = [t/t_min * DEFAULT_THICKNESS for t in self.dict_welds["thickness"]]
+        
+        # initialize figure
+        fig, axs = plt.subplots(figsize=(8,8))
+        
+        # plot weld mesh with polygon patches
+        for i in range(len(self.dict_welds["x_start"])):
+            x0 = self.dict_welds["x_start"][i]
+            x1 = self.dict_welds["x_end"][i]
+            y0 = self.dict_welds["y_start"][i]
+            y1 = self.dict_welds["y_end"][i]
+            xc = self.dict_welds["x_centroid"][i]
+            yc = self.dict_welds["y_centroid"][i]
+            
+            # calculate perpendicular direction vector to offset by thickness
+            u = np.array([x1,y1]) - np.array([x0,y0])
+            u_unit = u / np.linalg.norm(u)
+            v_unit = np.array([u_unit[1], -u_unit[0]])
+            
+            # plot using polygon patches
+            pt1 = np.array([x0, y0]) + v_unit * line_thicknesses[i]
+            pt2 = np.array([x0, y0]) - v_unit * line_thicknesses[i]
+            pt3 = np.array([x1, y1]) - v_unit * line_thicknesses[i]
+            pt4 = np.array([x1, y1]) + v_unit * line_thicknesses[i]
+            vertices = [pt1, pt2, pt3, pt4, pt1]
+            axs.add_patch(patches.Polygon(np.array(vertices), closed=True, facecolor="steelblue",
+                                          alpha=0.8, edgecolor="black", zorder=1, lw=0.5))
+            
+            # plot fiber centroid
+            axs.plot([xc],[yc],c="black",marker="o",markersize=2, alpha=0)
+            
+        # styling
+        axs.set_aspect('equal', 'datalim')
+        fig.suptitle("Weld Group Preview", fontweight="bold", fontsize=16)
+        axs.set_axisbelow(True)
+        plt.tight_layout()
+        
+        
     def plot_results(self):
         pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
