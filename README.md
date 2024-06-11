@@ -11,11 +11,13 @@
 </div>
 
 
+WORK IN PROGRESS.....
+
 
 
 ## Introduction
 
-EZweld is a python package that calculates stresses within a weld group subjected to both in-plane and out-of-plane forces. It does so using the elastic method as outlined in the AISC Steel Construction Manual. Define a weld group, apply loading, and get the resulting stresses back. It's that easy!
+EZweld is a python package that calculates stress demand in a weld group subjected to both in-plane and out-of-plane loading. It does so using the elastic method as outlined in the AISC Steel Construction Manual. Define a weld group, apply loading, and get the resulting stresses back. It's that easy.
 
 
 **Disclaimer:** this package is meant for <u>personal and educational use only</u>.
@@ -43,8 +45,6 @@ results = weld_group.solve(Vx=0, Vy=0, tension=0, Mx=0, My=0, torsion=0)
 
 # plot weld stress
 weld_group.plot_results()
-
-
 ```
 
 
@@ -95,18 +95,34 @@ Installation procedure:
 
 
 
-
-
 ## Usage
 
-WORK IN PROGRESS
+Here are all the public methods available to the user:
+
+**Adding Welds**
+
+* `ezweld.WeldGroup.add_line(start, end, segments, thickness)`
+* `ezweld.WeldGroup.add_rectangle(xo, yo, width, height, xsegments, ysegments, thickness)`
+* `ezweld.WeldGroup.add_circle(xo, yo, diameter, segments, thickness)`
+
+**Solving**
+
+* `ezweld.WeldGroup.solve(Vx, Vy, tension, Mx, My, torsion)`
+
+**Visualizations**
+
+* `ezweld.WeldGroup.preview()`
+* `ezweld.WeldGroup.plot_results()`
+
+For further guidance and documentation, you can access the docstring of any method using the help() command. (e.g. `help(ezweld.weldgroup.WeldGroup.add_line)`)
+
 
 
 
 
 ## Theoretical Background - Determining Weld Stress Via Elastic Method
 
-<u>Geometric Properties</u>
+**Analogous to Sections**
 
 A weld group can be treated like any other geometric section. As such, calculating its stress state is entirely analogous to calculating elastic stress on a cross-section using the combined stress formula. You'll see these equations in pretty much all mechanics of material textbooks. 
 
@@ -114,14 +130,9 @@ $$\sigma = \frac{P}{A} + \frac{M_x c_y}{I_x} + \frac{M_y c_x}{I_y}$$
 
 $$\tau = \frac{Tc}{J}$$
 
-Here is a figure from “Design of Welded Structures” textbook by Omer W. Blodgett that illustrates this similarity nicely.
-
-<div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_comparison.png?raw=true" alt="demo" style="width: 50%;" />
-</div>
+**Geometric Properties**
 
 A weld group, like any other sections, have geometric properties that we can calculate. EZweld does so by discretizing the weld group into little patches then applying the parallel axis theorem.
-
 
 
 Centroid:
@@ -162,21 +173,13 @@ $$S_{y,right} = \frac{I_y}{c_{y2}}$$
 
 
 
-<u>Geometric Properties - (One Dimension Less)</u>
+**Geometric Properties - (One Dimension Less)**
 
 Structural engineers tend to work one abstraction layers up from mechanical engineers (e.g. strain vs. deformation, normal stress vs. axial+moment). In the structural engineering context, weld are typically thought of as a 1-dimensional "line". As a result, weld stresses are expressed as **force per unit length** (kip/in) rather than force per unit area (ksi). 
 
 This is just a matter of convention. There are some benefits to working with one dimension less. For example, demands can now be calculated without knowing the weld's thickness, which means thickness becomes a design parameter that we can specify. One drawback is that having one dimension less gets kind of confusing, especially for weld groups with variable thicknesses. For weld group with variable thicknesses, the stress approach is recommended. Otherwise, we must calculate a modified length where:
 
 $$L^* = \frac{t}{t_{min}}\times L$$
-
-[INSERT FIGURE OF GEOMETRIC PROPERTIES]
-
-The geometric property equations above are repeated below for one dimension less. Note we can convert between the two conventions by diving the values above by the throat thickness.
-
-$$(ksi) = \frac{(k/in)}{t_{throat}}$$
-
-$$(in^3) = \frac{(in^4)}{t_{throat}}$$
 
 The geometric property equations above are repeated below for one dimension less. A easy way to think of this is to set t to unity.
 
@@ -202,20 +205,25 @@ $$S_{y,left} = \frac{I_y}{c_{y1}}$$
 
 $$S_{y,right} = \frac{I_y}{c_{y2}}$$
 
+Note we can convert between the two conventions by diving the values above by the throat thickness.
+
+$$(ksi) = \frac{(k/in)}{t_{throat}}$$
+
+$$(in^3) = \frac{(in^4)}{t_{throat}}$$
 
 
-<u>Determining Stresses</u>
+**Determining Stresses**
 
 A weld group may be subjected to forces about all 6 degrees of freedom. One caveat is that axial out-of-plane force can only be positive (tension). Compressive stresses are assumed to transfer via other mechanisms (such as bearing) and is ignored by EZweld. These applied forces are translated into stresses on individual small patches of weld.
 
 <div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_dof.png?raw=true" alt="demo" style="width: 50%;" />
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_dof.png?raw=true" alt="demo" style="width: 100%;" />
 </div>
 
 Whether a weld is subjected to tension or shear is irrelevant, all weld fail in shear along the throat length. Therefore, there is no such thing as normal stress (sigma) in weld stress calculations.
 
 <div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_throat.png?raw=true" alt="demo" style="width: 50%;" />
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_throat.png?raw=true" alt="demo" style="width: 40%;" />
 </div>
 
 
