@@ -5,9 +5,6 @@
   Weld Stress Calculations in Python
   <br>
 </h1>
-<p align="center">
-Define weld group, apply loading, and obtain stresses
-</p>
 
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/demo.gif?raw=true" alt="demo" style="width: 75%;" />
@@ -31,7 +28,22 @@ Run main.py:
 ```python
 import ezweld
 
-# TODO
+# initialize a weld group
+weld_group = ezweld.weldgroup.WeldGroup()
+
+# draw welds
+weld_group.add_line(start=[0,0], end=[0,10], segments=20)
+weld_group.add_line(start=[0,0], end=[10,10], segments=20)
+
+# preview geometry
+weld_group.preview()
+
+# calculate stresses using the elastic method
+results = weld_group.solve(Vx=0, Vy=0, tension=0, Mx=0, My=0, torsion=0)
+
+# plot weld stress
+weld_group.plot_results()
+
 
 ```
 
@@ -40,11 +52,12 @@ import ezweld
 
 **Option 1: Anaconda Python**
 
-Simply run main.py using your Anaconda base environment. The following packages are used:
+Simply run main.py using your base Anaconda environment. The following packages are used:
 
 * Numpy
-* Matplotlib
 * Pandas
+* Matplotlib
+* Plotly
 
 Installation procedure:
 
@@ -53,7 +66,7 @@ Installation procedure:
 3. Open and run "main.py" in Anaconda's Spyder IDE.
 
 
-**Option 2: Vanilla Python**
+**Option 2: Regular Python**
 
 1. Download this project to a folder of your choosing
     ```
@@ -81,7 +94,12 @@ Installation procedure:
     ```
 
 
+
+
+
 ## Usage
+
+WORK IN PROGRESS
 
 
 
@@ -98,7 +116,9 @@ $$\tau = \frac{Tc}{J}$$
 
 Here is a figure from “Design of Welded Structures” textbook by Omer W. Blodgett that illustrates this similarity nicely.
 
-[INSERT FIGURE OF WELD TO SECTION COMPARISON]
+<div align="center">
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_comparison.png?raw=true" alt="demo" style="width: 50%;" />
+</div>
 
 A weld group, like any other sections, have geometric properties that we can calculate. EZweld does so by discretizing the weld group into little patches then applying the parallel axis theorem.
 
@@ -188,11 +208,15 @@ $$S_{y,right} = \frac{I_y}{c_{y2}}$$
 
 A weld group may be subjected to forces about all 6 degrees of freedom. One caveat is that axial out-of-plane force can only be positive (tension). Compressive stresses are assumed to transfer via other mechanisms (such as bearing) and is ignored by EZweld. These applied forces are translated into stresses on individual small patches of weld.
 
-[INSERT FIGURE OF WELD DOFs]
+<div align="center">
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_dof.png?raw=true" alt="demo" style="width: 50%;" />
+</div>
 
 Whether a weld is subjected to tension or shear is irrelevant, all weld fail in shear along the throat length. Therefore, there is no such thing as normal stress (sigma) in weld stress calculations.
 
-[INSERT FIGURE OF WELD THROAT THICKNESS]
+<div align="center">
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_throat.png?raw=true" alt="demo" style="width: 50%;" />
+</div>
 
 
 
