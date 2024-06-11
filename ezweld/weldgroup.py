@@ -31,27 +31,33 @@ class WeldGroup:
         self.My = None
         self.torsion = None
         
-        # geometric properties
-        self.depth = None
-        self.width = None
-        self.A = None
+        # centroid
         self.x_centroid = None
         self.y_centroid = None
+        
+        # section geometric properties
+        self.A = None
         self.Ix = None
         self.Iy = None
-        self.Ixy = None
         self.Iz = None
-        self.Sx = None
-        self.Sy = None
+        self.Ixy = None
+        self.theta_p = None
+        self.Sx1 = None
+        self.Sx2 = None
+        self.Sy1 = None
+        self.Sy2 = None
         
         # geometric properties (force per unit length)
         self.Lw_plf = None
+        self.Lw_effective_plf = None
         self.Ix_plf = None
         self.Iy_plf = None
         self.Ixy_plf = None
         self.Iz_plf = None
-        self.Sx_plf = None
-        self.Sy_plf = None
+        self.Sx1_plf = None
+        self.Sx2_plf = None
+        self.Sy1_plf = None
+        self.Sy2_plf = None
         
         # dictionary storing discretization of weld group
         self.dict_welds = {"x_centroid":[],
@@ -148,6 +154,49 @@ class WeldGroup:
         self.dict_welds["length"] = self.dict_welds["length"] + [length_segments] * segments
         self.dict_welds["area"] = self.dict_welds["area"] + [thickness * length_segments] * segments
     
+    def rotate(self, rotation_degrees):
+        """rotate all meshes by a user-specified angle in degrees"""
+        # rotation matrix
+        rotation_rad = rotation_degrees * math.pi / 180
+        T = np.array([
+            [math.cos(rotation_rad), -math.sin(rotation_rad)],
+            [math.sin(rotation_rad), math.cos(rotation_rad)]
+            ])
+        
+        # apply to each patch
+        x_centroid_new = []
+        y_centroid_new = []
+        x_start_new = []
+        x_end_new = []
+        y_start_new = []
+        y_end_new = []
+        for i in range(len(self.dict_welds["x_centroid"])):
+            center = np.array([self.dict_welds["x_centroid"][i], self.dict_welds["y_centroid"][i]])
+            start = np.array([self.dict_welds["x_start"][i], self.dict_welds["y_start"][i]])
+            end = np.array([self.dict_welds["x_end"][i], self.dict_welds["y_end"][i]])
+            
+            center_r = T @ center
+            start_r = T @ start
+            end_r = T @ end
+            
+            x_centroid_new.append(center_r[0])
+            y_centroid_new.append(center_r[1])
+            x_start_new.append(start_r[0])
+            x_end_new.append(end_r[0])
+            y_start_new.append(start_r[1])
+            y_end_new.append(end_r[1])
+        
+        # override coordinate information
+        self.dict_welds["x_centroid"] = x_centroid_new
+        self.dict_welds["y_centroid"] = y_centroid_new
+        self.dict_welds["x_start"] = x_start_new
+        self.dict_welds["y_start"] = y_start_new
+        self.dict_welds["x_end"] = x_end_new
+        self.dict_welds["y_end"] = y_end_new
+        
+        # re-calculate geometric properties
+        self.update_geometric_properties()
+    
     
     def update_geometric_properties(self):
         """
@@ -176,7 +225,41 @@ class WeldGroup:
         self.Sy1 = self.Iy / abs(max(all_x) - self.x_centroid)
         self.Sy2 = self.Iy / abs(min(all_x) - self.x_centroid)
         
-    
+        # principal axes via Mohr's circle
+        if self.Ix==self.Iy:
+            self.theta_p = 0
+        else:
+            self.theta_p = (  math.atan((self.Ixy)/((self.Ix-self.Iy)/2)) / 2) * 180 / math.pi
+            if abs(self.theta_p) > 0.1:
+                print("WARNING: Weld group should be rotated to its principal orientation ", end="")
+                print("before solving. Otherwise normal stress due to flexure will be incorrectly superimposed.")
+                print(f"Please rotate the weld group by {self.theta_p:.2f} degrees by calling the .rotate() method")
+                
+
+        # now repeat the calculation above with one-dimension less.
+        # modify length to account for variable thickness
+        t_min = min(self.dict_welds["thickness"])
+        modified_length = [t/t_min * L for t,L in zip(self.dict_welds["thickness"], self.dict_welds["length"])]
+        
+        # lengths
+        self.Lw_plf = sum(self.dict_welds["length"])
+        self.Lw_effective_plf = sum(modified_length)
+        
+        # moment of inertia
+        self.Ix_plf = sum([ L * (y - self.y_centroid)**2 for y,L in zip(self.dict_welds["y_centroid"],modified_length) ])
+        self.Iy_plf = sum([ L * (x - self.x_centroid)**2 for x,L in zip(self.dict_welds["x_centroid"],modified_length) ])
+        self.Ixy_plf = sum([ L * (y - self.y_centroid) * (x - self.x_centroid) for x,y,L in zip(self.dict_welds["x_centroid"],self.dict_welds["y_centroid"],modified_length) ])
+        self.Iz_plf = self.Ix_plf + self.Iy_plf
+        
+        # section modulus
+        self.Sx1_plf = self.Ix_plf / abs(max(all_y) - self.y_centroid)
+        self.Sx2_plf = self.Ix_plf / abs(min(all_y) - self.y_centroid)
+        self.Sy1_plf = self.Iy_plf / abs(max(all_x) - self.x_centroid)
+        self.Sy2_plf = self.Iy_plf / abs(min(all_x) - self.x_centroid)
+        
+        
+        
+        
     
     def solve(self, Vx=0, Vy=0, Mx=0, My=0, torsion=0, tension=0):
         pass
@@ -220,15 +303,54 @@ class WeldGroup:
             vertices = [pt1, pt2, pt3, pt4, pt1]
             axs.add_patch(patches.Polygon(np.array(vertices), closed=True, facecolor="steelblue",
                                           alpha=0.8, edgecolor="black", zorder=1, lw=0.5))
-            
-            # plot fiber centroid
+            # xlim and ylim do not adjust properly with only patches. plot the centroids as well but make them invisible
             axs.plot([xc],[yc],c="black",marker="o",markersize=2, alpha=0)
+            
+        # plot Cog
+        axs.plot(self.x_centroid, self.y_centroid, marker="*",c="red",markersize=8,zorder=2,linestyle="none")
+        axs.annotate("CoG",xy=(self.x_centroid, self.y_centroid), xycoords='data', color="red",
+                     xytext=(5, -5), textcoords='offset points', fontsize=14, va="top", zorder=3)
+        
+        # # annotation for bolt group properties
+        # information_text = "Ix: {} \n".format(self.Ix)
+        # axs.annotate(information_text, (0.1,0.6), xycoords='axes fraction', fontsize=14, va="top", ha="left")
             
         # styling
         axs.set_aspect('equal', 'datalim')
         fig.suptitle("Weld Group Preview", fontweight="bold", fontsize=16)
         axs.set_axisbelow(True)
         plt.tight_layout()
+        
+    def print_properties(self):
+        # weld group properties
+        print("Geometric properties for computing stresses")
+        print(f" \tarea: {self.A:.1f} in^2")
+        print(f" \tx_cg: {self.x_centroid:.1f} in")
+        print(f" \ty_cg: {self.y_centroid:.1f} in")
+
+        print(f" \tIx: {self.Ix:.1f} in^4")
+        print(f" \tIy: {self.Iy:.1f} in^4")
+        print(f" \tIz: {self.Iz:.1f} in^4")
+        print(f" \tIxy: {self.Ixy:.1f} in^4")
+
+        print(f" \tSx1: {self.Sx1:.1f} in^3")
+        print(f" \tSx2: {self.Sx2:.1f} in^3")
+        print(f" \tSy1: {self.Sy1:.1f} in^3")
+        print(f" \tSy2: {self.Sy2:.1f} in^3")
+        
+        print("Geometric properties for computing force/length")
+        print(f" \tlength: {self.Lw_effective_plf:.1f} in")
+
+        print(f" \tIx: {self.Ix_plf:.1f} in^3")
+        print(f" \tIy: {self.Iy_plf:.1f} in^3")
+        print(f" \tIz: {self.Iz_plf:.1f} in^3")
+        print(f" \tIxy: {self.Ixy_plf:.1f} in^3")
+        
+        print(f" \tSx1: {self.Sx1_plf:.1f} in^2")
+        print(f" \tSx2: {self.Sx2_plf:.1f} in^2")
+        print(f" \tSy1: {self.Sy1_plf:.1f} in^2")
+        print(f" \tSy2: {self.Sy2_plf:.1f} in^2")
+        
         
         
     def plot_results(self):
