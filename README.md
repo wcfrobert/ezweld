@@ -11,14 +11,9 @@
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/demo.gif?raw=true" alt="demo" style="width: 75%;" />
 </div>
 
-
 WORK IN PROGRESS.....
 
 EZweld is a python package that calculates stress demand in weld groups subjected to both in-plane and out-of-plane loading. It does so using the elastic method as outlined in the AISC Steel Construction Manual. 
-
-1. Define a weld group 
-2. Apply loading 
-3. Get stress results back
 
 **Disclaimer:** this package is meant for <u>personal and educational use only</u>.
 
@@ -130,7 +125,7 @@ Here are all the public methods available to the user:
 * `ezweld.weldgroup.WeldGroup.preview()`
 * `ezweld.weldgroup.WeldGroup.plot_results()`
 
-For further guidance and documentation, you can access the docstring of any method using the help() command. Here's the output from `help(ezweld.weldgroup.WeldGroup.add_line)`
+For further guidance and documentation, you can access the docstring of any method using the help() command. For example, here's the output from `help(ezweld.weldgroup.WeldGroup.add_line)`
 
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/docstring.png?raw=true" alt="demo" style="width: 80%;" />
@@ -142,17 +137,15 @@ For further guidance and documentation, you can access the docstring of any meth
 
 **Analogy to Sections**
 
-A weld group can be treated like any other geometric section. Therefore, calculating its stress state is entirely analogous to calculating elastic stress on a cross-section using the combined stress formula. 
-
-$$\sigma = \frac{P}{A} + \frac{M_x c_y}{I_x} + \frac{M_y c_x}{I_y}$$
-
-$$\tau = \frac{Tc}{J}$$
-
-Here is a figure from the “Design of Welded Structures” textbook by Omer W. Blodgett that illustrates this resemblance.
+A weld group can be treated like any other geometric section. Therefore, calculating its stress state is entirely analogous to calculating elastic stress on a cross-section using the combined stress formula. Here is a figure from the “Design of Welded Structures” textbook by Omer W. Blodgett that illustrates this resemblance.
 
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_comparison.png?raw=true" alt="demo" style="width: 50%;" />
 </div>
+
+$$\sigma = \frac{P}{A} + \frac{M_x c_y}{I_x} + \frac{M_y c_x}{I_y}$$
+
+$$\tau = \frac{Tc}{J}$$
 
 An important precondition for using the above formula is that the section/weld-group MUST be oriented about its principal axes. If not, the section/weld-group must be rotated. EZweld makes this simple with the .rotate() method. In addition, the applied moment must be resolved about into its principal components.
 
@@ -229,7 +222,7 @@ Notations:
 
 In most structural engineering applications, welds are thought of as a 1-dimensional "line". As a result, weld stresses are expressed as **force per unit length** (kip/in) rather than force per unit area (ksi). This is simply a matter of convention. There are some benefits to working with one dimension less. For example, demands can now be calculated without knowing the weld's thickness, which means thickness becomes a design parameter that we can specify. But a drawback is that having one dimension less gets kind of confusing when weld groups have welds with variable thicknesses. 
 
-Where variable weld thickness exists within a weld group, EZweld calculates an "effective" length in proportion to the minimum throat thickness within the group. This modified length is then used to calculate the geometric properties.
+Where variable weld thickness exists within a weld group, EZweld calculates an "effective" length proportional to the minimum throat thickness within the group. This modified length is then used to calculate the geometric properties with one dimension less.
 
 
 $$L'_i = \frac{t_i}{t_{min}} \times L_i$$
@@ -262,11 +255,11 @@ $$S_{y,left} = \frac{I_y}{c_{y1}}$$
 
 $$S_{y,right} = \frac{I_y}{c_{y2}}$$
 
-We are essentially setting thickness to unity and subtracting on dimension from the units. We can also convert between the two conventions quite easily when the throat thicknesses are uniform.
+We are essentially just setting thickness to unity. We can also convert between the two conventions quite easily when the throat thicknesses are uniform.
 
-* Converting between stress and force/length: $(ksi) = \frac{(k/in)}{t_{throat}}$
+$$(ksi) = \frac{(k/in)}{t_{throat}}$$
 
-* Converting properties such as moment of inertias: $(in^4) = (in^3)\times t_{throat}$
+$$(in^4) = (in^3)\times t_{throat}$$
 
 
 
@@ -284,9 +277,9 @@ A weld group may be subjected to loading in all 6 degrees of freedom. These forc
 Stress due to in-plane shear force ($V_x$, $V_y$):
 
 
-$$\tau_{x,direct} = \frac{-V_x}{A}$$
+$$\tau_{x,direct} = \frac{-V_x}{A_w}$$
 
-$$\tau_{y,direct} = \frac{-V_y}{A}$$
+$$\tau_{y,direct} = \frac{-V_y}{A_w}$$
 
 
 
@@ -302,7 +295,7 @@ $$\tau_{y,torsional} = \frac{-torsion \times x_i}{J}$$
 Stress from out-of-plane forces ($tension$, $M_x$, $M_y$):
 
 
-$$\tau_{z,direct} = \frac{tension}{A}$$
+$$\tau_{z,direct} = \frac{tension}{A_w}$$
 
 $$\tau_{z,Mx} = \frac{M_x y_i}{I_x}$$
 
@@ -360,8 +353,8 @@ Here is an example illustrating how $V_y$ and $M_x$ is resolved into a resultant
 
 Limitations of the elastic method:
 
-* The elastic method does not allow any plasticity which means it can be quite conservative whenever there are applied moments. Plastic method and the instant center of rotation method are less conservative if you are looking to justify extra capacity.
-* The elastic method does not take into account deformation compatibility and the effect of load angle. Welds are assumed to share loads equally under direct shear. In actuality, welds oriented transversely to applied loading have up to 50% higher capacity and stiffness (but lower ductility). Transversely loaded welds tend to fracture first long before longitudinal welds can reach their full strength. Refer to the steel construction manual for more guidance on this matter.
+* The elastic method does not allow any plasticity which means it can be quite conservative whenever there are applied moments. Plastic method and the instant center of rotation method are less conservative if you are looking to justify additional capacity.
+* The elastic method does not take into account deformation compatibility and the effect of load angle. Welds are assumed to share loads equally under direct shear. In actuality, welds oriented transversely to applied loading have up to 50% higher capacity and stiffness (but lower ductility). Transversely loaded welds tend to fracture first before longitudinal welds can reach their full strength. Refer to the steel construction manual for more guidance on this matter.
 * For out-of-plane moment, contribution of any bearing surface is ignored and the neutral axis is assumed to occur at the centroid.
 
 
