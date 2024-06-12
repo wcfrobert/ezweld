@@ -154,10 +154,11 @@ class WeldGroup:
         self.dict_welds["length"] = self.dict_welds["length"] + [length_segments] * segments
         self.dict_welds["area"] = self.dict_welds["area"] + [thickness * length_segments] * segments
     
-    def rotate(self, rotation_degrees):
+    
+    def rotate(self, angle):
         """rotate all meshes by a user-specified angle in degrees"""
         # rotation matrix
-        rotation_rad = rotation_degrees * math.pi / 180
+        rotation_rad = angle * math.pi / 180
         T = np.array([
             [math.cos(rotation_rad), -math.sin(rotation_rad)],
             [math.sin(rotation_rad), math.cos(rotation_rad)]
@@ -259,8 +260,6 @@ class WeldGroup:
         
         
         
-        
-    
     def solve(self, Vx=0, Vy=0, Mx=0, My=0, torsion=0, tension=0):
         pass
     
