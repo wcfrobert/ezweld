@@ -225,7 +225,9 @@ In most structural engineering applications, welds are thought of as a 1-dimensi
 
 Where variable weld thickness exists within a weld group, EZweld calculates an "effective" length proportional to the minimum throat thickness within the group. 
 
-$$L^_{effective,i} = \frac{t_i}{t_{min}} \times L_i$$
+
+$$L_{effective} = \frac{t}{t_{min}} \times L_i$$
+
 
 This modified length is then used to calculate the geometric properties with one dimension less.
 
