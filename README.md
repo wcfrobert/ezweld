@@ -47,6 +47,12 @@ results = weld_group.solve(Vx=0, Vy=100, tension=0, Mx=1000, My=0, torsion=0)
 weld_group.plot_results()
 ```
 
+Sign convention for applied loading to weld group:
+
+<div align="center">
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_dof.png?raw=true" alt="demo" style="width: 60%;" />
+</div>
+
 
 ## Installation
 
@@ -213,19 +219,26 @@ In most structural engineering applications, welds are thought of as a 1-dimensi
 
 Where variable weld thickness exists within a weld group, EZweld calculates an "effective" length in proportion to the minimum throat thickness within the group. This modified length is then used to calculate the geometric properties.
 
-$$L^*_i = \frac{t_i}{t_{min}}\times L_i$$
 
-$$x_{cg} = \frac{\sum x_i L^*_i}{\sum L^*}$$
+$$L'_{i} = \frac{t_i}{t_{min}} \times L_i$$
 
-$$y_{cg} = \frac{\sum y_i L^*_i}{\sum L^*}$$
+$$x_{cg} = \frac{\sum x_i L'_i}{\sum L'}$$
 
-$$L_w =  \iint dL = \sum L^*_i$$
 
-$$I_x = \iint y^2 dL= \sum y_i^2 L^*_i$$
+$$y_{cg} = \frac{\sum y_i L'_i}{\sum L'}$$
 
-$$I_y = \iint x^2 dL = \sum x_i^2 L^*_i$$
 
-$$I_{xy} = \iint xydL = \sum x_i y_i L^*_i$$
+$$L_w =  \iint dL = \sum L^'_i$$
+
+
+$$I_x = \iint y^2 dL= \sum y_i^2 L^'_i$$
+
+
+$$I_y = \iint x^2 dL = \sum x_i^2 L^'_i$$
+
+
+$$I_{xy} = \iint xydL = \sum x_i y_i L^'_i$$
+
 
 $$I_z = J = I_p = I_x + I_y$$
 
