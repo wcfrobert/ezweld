@@ -225,7 +225,7 @@ In most structural engineering applications, welds are thought of as a 1-dimensi
 
 Where variable weld thickness exists within a weld group, EZweld calculates an "effective" length proportional to the minimum throat thickness within the group. 
 
-$$L^{'}_{i} = \frac{t_i}{t_{min}} \times L_i$$
+$$L^_{effective,i} = \frac{t_i}{t_{min}} \times L_i$$
 
 This modified length is then used to calculate the geometric properties with one dimension less.
 
@@ -364,9 +364,8 @@ Limitations of the elastic method:
 
 - Sign convention follows the right-hand rule. right is +X, top is +Y, out-of-page is +Z
 - EZweld is unit-agnostic. You can either use [kip, in] or [N, mm] as long as you are consistent.
-- Weld patches do not have its own local coordinate system. All stresses are expressed with respect to the global axis.
 - Welds are assumed to fail in pure shear without any normal stress.
-- The combined stress formula is only valid when applied about a weld group's principal orientation. EZweld will warn the user if a weld group needs to be rotated. The applied moment must be resolved to its principal components as well.
+- The combined stress formula is only valid when applied about a weld group's principal orientation. EZweld will warn the user if a weld group needs to be rotated. The applied moment should also be resolved to its principal components.
 
 
 
