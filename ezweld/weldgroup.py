@@ -72,7 +72,7 @@ class WeldGroup:
         self.df_welds = None
     
     
-    def add_rectangle(self, xo, yo, width, height, xsegments, ysegments, thickness=5/16):
+    def add_rectangle(self, xo, yo, width, height, xsegments, ysegments, thickness):
         """
         Add a rectangular weld group by specifying the bottom left corner + width and height
         
@@ -91,7 +91,7 @@ class WeldGroup:
         self.add_line(start=pt2, end=pt3, segments=ysegments, thickness=thickness)
             
         
-    def add_circle(self, xo, yo, diameter, segments, thickness=5/16):
+    def add_circle(self, xo, yo, diameter, segments, thickness):
         """
         Add a circular weld group by specifying the center + a diameter
         
@@ -119,13 +119,18 @@ class WeldGroup:
             self.add_line(start=pt1, end=pt2, segments=1, thickness=thickness)
     
     
-    def add_line(self, start, end, segments, thickness=5/16):
+    def add_line(self, start, end, segments, thickness):
         """
-        Add a weld strip by specifying two points. 
+        Add a weld strip to the weld group by specifying two points. 
         
-        Note: within structural engineering, weld throat thickness is usually not specified
-        until later, and forces are in force/length rather than stress. By default, 
-        assume 5/16 inch throat thickness.
+        Arguments:
+            start           list:: [x, y] coordinate of first point
+            end             list:: [x, y] coordiante of the second point
+            segments        int:: number of weld patches to draw along the line
+            thickness       float:: throat thickness of weld line.
+            
+        Return:
+            None
         """
         # convert into numpy arrays
         start = np.array(start)

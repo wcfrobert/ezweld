@@ -14,20 +14,22 @@
 
 WORK IN PROGRESS.....
 
-- [Introduction](#introduction)
+EZweld is a python package that calculates stress demand in weld groups subjected to both in-plane and out-of-plane loading. It does so using the elastic method as outlined in the AISC Steel Construction Manual. 
+
+1. Define a weld group 
+2. Apply loading 
+3. Get stress results back
+
+**Disclaimer:** this package is meant for <u>personal and educational use only</u>.
+
+
 - [Quick Start](#quick-start)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Theoretical Background - Weld Stress Determination Via Elastic Method](#theoretical-background---weld-stress-determination-via-elastic-method)
+- [Theoretical Background](#theoretical-background)
 - [Assumptions](#assumptions)
 - [License](#license)
 
-
-## Introduction
-
-EZweld is a python package that calculates stress demand in weld groups subjected to both in-plane and out-of-plane loading. It does so using the elastic method as outlined in the AISC Steel Construction Manual. 1.) Define a weld group 2.) apply loading 3.) get the results back.
-
-**Disclaimer:** this package is meant for <u>personal and educational use only</u>.
 
 
 ## Quick Start
@@ -114,26 +116,29 @@ Here are all the public methods available to the user:
 
 **Defining Weld Group**
 
-* `ezweld.WeldGroup.add_line(start, end, segments, thickness)`
-* `ezweld.WeldGroup.add_rectangle(xo, yo, width, height, xsegments, ysegments, thickness)`
-* `ezweld.WeldGroup.add_circle(xo, yo, diameter, segments, thickness)`
-* `ezweld.WeldGroup.rotate(angle)`
+* `ezweld.weldgroup.WeldGroup.add_line(start, end, segments, thickness)`
+* `ezweld.weldgroup.WeldGroup.add_rectangle(xo, yo, width, height, xsegments, ysegments, thickness)`
+* `ezweld.weldgroup.WeldGroup.add_circle(xo, yo, diameter, segments, thickness)`
+* `ezweld.weldgroup.WeldGroup.rotate(angle)`
 
 **Solving**
 
-* `ezweld.WeldGroup.solve(Vx, Vy, tension, Mx, My, torsion)`
+* `ezweld.weldgroup.WeldGroup.solve(Vx, Vy, tension, Mx, My, torsion)`
 
 **Visualizations**
 
-* `ezweld.WeldGroup.preview()`
-* `ezweld.WeldGroup.plot_results()`
+* `ezweld.weldgroup.WeldGroup.preview()`
+* `ezweld.weldgroup.WeldGroup.plot_results()`
 
-For further guidance and documentation, you can access the docstring of any method using the help() command. (e.g. `help(ezweld.weldgroup.WeldGroup.add_line)`)
+For further guidance and documentation, you can access the docstring of any method using the help() command. Here's the output from `help(ezweld.weldgroup.WeldGroup.add_line)`
+
+<div align="center">
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/docstring.png?raw=true" alt="demo" style="width: 80%;" />
+</div>
 
 
 
-
-## Theoretical Background - Weld Stress Determination Via Elastic Method
+## Theoretical Background
 
 **Analogy to Sections**
 
