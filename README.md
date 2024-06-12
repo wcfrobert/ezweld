@@ -137,13 +137,13 @@ For further guidance and documentation, you can access the docstring of any meth
 
 **Analogy to Sections**
 
-A weld group can be treated like any other geometric section. Therefore, calculating its stress state is entirely analogous to calculating elastic stress on a cross-section using the combined stress formula. You'll probably recognize these formulas as they appear in all mechanics of material textbooks. 
+A weld group can be treated like any other geometric section. Therefore, calculating its stress state is entirely analogous to calculating elastic stress on a cross-section using the combined stress formula. 
 
 $$\sigma = \frac{P}{A} + \frac{M_x c_y}{I_x} + \frac{M_y c_x}{I_y}$$
 
 $$\tau = \frac{Tc}{J}$$
 
-Here is a figure from the “Design of Welded Structures” textbook by Omer W. Blodgett that illustrates the resemblance.
+Here is a figure from the “Design of Welded Structures” textbook by Omer W. Blodgett that illustrates this resemblance.
 
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_comparison.png?raw=true" alt="demo" style="width: 50%;" />
@@ -227,7 +227,7 @@ In most structural engineering applications, welds are thought of as a 1-dimensi
 Where variable weld thickness exists within a weld group, EZweld calculates an "effective" length in proportion to the minimum throat thickness within the group. This modified length is then used to calculate the geometric properties.
 
 
-$$L'_{i} = \frac{t_i}{t_{min}} \times L_i$$
+$$L'_i = \frac{t_i}{t_{min}} \times L_i$$
 
 $$x_{cg} = \frac{\sum x_i L'_i}{\sum L'}$$
 
@@ -269,13 +269,11 @@ We are essentially setting thickness to unity and subtracting on dimension from 
 
 **Calculating Stress**
 
-A weld group may be subjected to loading in all 6 degrees of freedom. These forces are then translated into shear stresses using the geometric properties above and the elastic stress formula presented below.
+A weld group may be subjected to loading in all 6 degrees of freedom. These forces are then translated into shear stresses using the geometric properties above and the elastic stress formula presented below. Be careful when specifying negative out-of-plane axial force (i.e. compression). Compression is typically transferred through other mechanisms like bearing rather than through the weld itself. To encourage more deliberation on the part of the user, "Vz" was renamed to "tension" during development.
 
 <div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_dof.png?raw=true" alt="demo" style="width: 100%;" />
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_dof.png?raw=true" alt="demo" style="width: 60%;" />
 </div>
-
-Be careful when specifying negative out-of-plane axial force (i.e. compression). Compression is typically transferred through other mechanisms like bearing rather than through the weld itself. To encourage more deliberation on the part of the user, "Vz" was renamed to "tension".
 
 
 Stress due to in-plane shear force ($V_x$, $V_y$):
@@ -351,7 +349,7 @@ $$\sigma_v = \sqrt{\sigma_{transverse}^2 + 3(\tau_{transverse}^2 + \tau_{longitu
 Here is an example illustrating how $V_y$ and $M_x$ is resolved into a resultant shear stress:
 
 <div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_stress_example.png?raw=true" alt="demo" style="width: 100%;" />
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_stress_example.png?raw=true" alt="demo" style="width: 80%;" />
 </div>
 
 
