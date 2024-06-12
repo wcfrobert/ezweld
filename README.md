@@ -137,17 +137,18 @@ For further guidance and documentation, you can access the docstring of any meth
 
 **Analogy to Sections**
 
-A weld group can be treated like any other geometric section. Therefore, calculating its stress state is entirely analogous to calculating elastic stress on a cross-section using the combined stress formula. Here is a figure from the “Design of Welded Structures” textbook by Omer W. Blodgett that illustrates this resemblance.
-
-<div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_comparison.png?raw=true" alt="demo" style="width: 50%;" />
-</div>
+A weld group can be treated like any other geometric section. Therefore, calculating its stress state is entirely analogous to calculating elastic stress on a cross-section using the combined stress formula. 
 
 $$\sigma = \frac{P}{A} + \frac{M_x c_y}{I_x} + \frac{M_y c_x}{I_y}$$
 
 $$\tau = \frac{Tc}{J}$$
 
-An important precondition for using the above formula is that the section/weld-group MUST be oriented about its principal axes. If not, the section/weld-group must be rotated. EZweld makes this simple with the .rotate() method. In addition, the applied moment must be resolved about into its principal components.
+Here is a figure from the “Design of Welded Structures” textbook by Omer W. Blodgett that illustrates this resemblance.
+
+<div align="center">
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_comparison.png?raw=true" alt="demo" style="width: 50%;" />
+</div>
+An important precondition for using the combined stress formulas above is that the section/weld-group MUST be oriented about its principal axes. If not, the section/weld-group must be rotated. EZweld makes this simple with the .rotate() method. In addition, the applied moment must be resolved about into its principal components.
 
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_principal_axes.png?raw=true" alt="demo" style="width: 50%;" />
@@ -157,7 +158,7 @@ EZweld will warn the user if a weld group needs to be rotated. A weld group is i
 
 $$I_{xy} = 0$$
 
-Otherwise, the weld group must be rotated by a specific angle.
+Otherwise, the weld group must be rotated by the following angle.
 
 $$\theta_p = 0.5\times tan^{-1}(\frac{I_{xy}}{I_x - I_y})$$
 
@@ -220,28 +221,30 @@ Notations:
 
 **Geometric Properties - (Treating Welds as Lines)**
 
-In most structural engineering applications, welds are thought of as a 1-dimensional "line". As a result, weld stresses are expressed as **force per unit length** (kip/in) rather than force per unit area (ksi). This is simply a matter of convention. There are some benefits to working with one dimension less. For example, demands can now be calculated without knowing the weld's thickness, which means thickness becomes a design parameter that we can specify. But a drawback is that having one dimension less gets kind of confusing when weld groups have welds with variable thicknesses. 
+In most structural engineering applications, welds are thought of as a 1-dimensional "line". As a result, weld stresses are expressed as **force per unit length** (kip/in) rather than force per unit area (ksi). This is simply a matter of convention. There are some benefits to working with one dimension less. For example, demands can now be calculated without knowing the weld's thickness, which means thickness becomes a design parameter that we can specify. But one drawback is that having one dimension less gets kind of confusing when weld groups have welds with variable thicknesses. 
 
-Where variable weld thickness exists within a weld group, EZweld calculates an "effective" length proportional to the minimum throat thickness within the group. This modified length is then used to calculate the geometric properties with one dimension less.
+Where variable weld thickness exists within a weld group, EZweld calculates an "effective" length proportional to the minimum throat thickness within the group. 
 
-$$L'_i = \frac{t_i}{t_{min}} \times L_i$$
+$$L^{'}_{i} = \frac{t_i}{t_{min}} \times L_i$$
 
-$$x_{cg} = \frac{\sum x_i L'_i}{\sum L'}$$
+This modified length is then used to calculate the geometric properties with one dimension less.
 
-
-$$y_{cg} = \frac{\sum y_i L'_i}{\sum L'}$$
-
-
-$$L_w =  \iint dL = \sum L'_i$$
+$$x_{cg} = \frac{\sum x_i L_i}{\sum L}$$
 
 
-$$I_x = \iint y^2 dL= \sum y_i^2 L'_i$$
+$$y_{cg} = \frac{\sum y_i L_i}{\sum L}$$
 
 
-$$I_y = \iint x^2 dL = \sum x_i^2 L'_i$$
+$$L_w =  \iint dL = \sum L_i$$
 
 
-$$I_{xy} = \iint xydL = \sum x_i y_i L'_i$$
+$$I_x = \iint y^2 dL= \sum y_i^2 L_i$$
+
+
+$$I_y = \iint x^2 dL = \sum x_i^2 L_i$$
+
+
+$$I_{xy} = \iint xydL = \sum x_i y_i L_i$$
 
 
 $$I_z = J = I_p = I_x + I_y$$
@@ -259,8 +262,6 @@ We are essentially just setting thickness to unity. We can also convert between 
 $$(ksi) = \frac{(k/in)}{t_{throat}}$$
 
 $$(in^4) = (in^3)\times t_{throat}$$
-
-
 
 
 
