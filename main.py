@@ -1,3 +1,17 @@
+"""
+TODO LIST:
+    - warn user about weld group rotation
+    - modify preview() to show weld group geometric properties
+    - implement solution method to all applied forces
+    - implement plotly result plot with colormap
+    - create function to add arrows to a plotly figure
+    - implement cone and arrow to show stress vector
+    - figure out signs
+    - write docstring for methods
+    - write docstrings for class
+"""
+
+
 import ezweld
 
 

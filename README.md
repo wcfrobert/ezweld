@@ -38,8 +38,8 @@ import ezweld
 weld_group = ezweld.weldgroup.WeldGroup()
 
 # draw welds
-weld_group.add_line(start=[0,0], end=[0,10], segments=20)
-weld_group.add_line(start=[0,0], end=[10,10], segments=20)
+weld_group.add_line(start=[0,0], end=[0,10], segments=20, thickness=5/16)
+weld_group.add_line(start=[0,0], end=[10,10], segments=20, thickness=5/16)
 
 # preview geometry
 weld_group.preview()
@@ -51,7 +51,7 @@ results = weld_group.solve(Vx=0, Vy=100, tension=0, Mx=1000, My=0, torsion=0)
 weld_group.plot_results()
 ```
 
-Sign convention for applied loading:
+Sign convention for loading:
 
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_dof.png?raw=true" alt="demo" style="width: 60%;" />
@@ -68,8 +68,6 @@ Run main.py using your base Anaconda environment. The following packages are use
 * Pandas
 * Matplotlib
 * Plotly
-
-Installation procedure:
 
 1. Download Anaconda python
 2. Download this package (click the green "Code" button and download zip file)
@@ -118,14 +116,14 @@ Here are all the public methods available to the user:
 
 **Solving**
 
-* `ezweld.weldgroup.WeldGroup.solve(Vx, Vy, tension, Mx, My, torsion)`
+* `ezweld.weldgroup.WeldGroup.solve(Vx=0, Vy=0, tension=0, Mx=0, My=0, torsion=0)`
 
 **Visualizations**
 
 * `ezweld.weldgroup.WeldGroup.preview()`
 * `ezweld.weldgroup.WeldGroup.plot_results()`
 
-For further guidance and documentation, you can access the docstring of any method using the help() command. For example, here's the output from `help(ezweld.weldgroup.WeldGroup.add_line)`
+For more guidance and documentation, you can access the docstring of any method using the help() command. For example, here's the output from `help(ezweld.weldgroup.WeldGroup.add_line)`
 
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/docstring.png?raw=true" alt="demo" style="width: 80%;" />
@@ -148,13 +146,13 @@ Here is a figure from the “Design of Welded Structures” textbook by Omer W. 
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_comparison.png?raw=true" alt="demo" style="width: 50%;" />
 </div>
-An important precondition for using the combined stress formulas above is that the section/weld-group MUST be oriented about its principal axes. If not, the section/weld-group must be rotated. EZweld makes this simple with the .rotate() method. In addition, the applied moment must be resolved about into its principal components.
+An important precondition for using the combined stress formulas is that the section/weld-group MUST be oriented about its principal axes. EZweld will warn the user if a weld group needs to be rotated with the .rotate() method. In addition, the applied moment must be resolved about into its principal components.
 
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_principal_axes.png?raw=true" alt="demo" style="width: 50%;" />
 </div>
 
-EZweld will warn the user if a weld group needs to be rotated. A weld group is in its principal orientation if the product of inertia is equal to zero:
+A weld group is in its principal orientation if the product of inertia is equal to zero:
 
 $$I_{xy} = 0$$
 
@@ -221,10 +219,13 @@ Notations:
 
 **Geometric Properties - (Treating Welds as Lines)**
 
-In most structural engineering applications, welds are thought of as a 1-dimensional "line". As a result, weld stresses are expressed as **force per unit length** (kip/in) rather than force per unit area (ksi). This is simply a matter of convention. There are some benefits to working with one dimension less. For example, demands can now be calculated without knowing the weld's thickness, which means thickness becomes a design parameter that we can specify. But one drawback is that having one dimension less gets kind of confusing when weld groups have welds with variable thicknesses. 
+In many engineering applications, welds are thought of as a 1-dimensional "line". As a result, weld stresses are often expressed as **force per unit length** (kip/in) rather than force per unit area (ksi). There are some benefits to working with one dimension less. For example, demands can now be calculated without knowing the weld's thickness, which means thickness becomes a design parameter that we can specify. Here a table from the Omer W. Blodgett textbook that provides equations for common weld group geometric properties. Notice how the units are 1 dimensions less:
 
-Where variable weld thickness exists within a weld group, EZweld calculates an "effective" length proportional to the minimum throat thickness within the group. 
+<div align="center">
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_properties.png?raw=true" alt="demo" style="width: 60%;" />
+</div>
 
+One notable drawback of treating welds as lines is that having one dimension less gets kind of confusing when weld groups have welds with variable thicknesses. Where variable weld thicknesses are defined, EZweld calculates an "effective" length proportional to the minimum thickness within the group. 
 
 $$L_{effective} = \frac{t}{t_{min}} \times L_i$$
 
@@ -259,7 +260,7 @@ $$S_{y,left} = \frac{I_y}{c_{y1}}$$
 
 $$S_{y,right} = \frac{I_y}{c_{y2}}$$
 
-We are essentially just setting thickness to unity. We can also convert between the two conventions quite easily when the throat thicknesses are uniform.
+We are essentially just setting thickness to unity. It is easy to convert between the two conventions:
 
 $$(ksi) = \frac{(k/in)}{t_{throat}}$$
 
@@ -267,9 +268,12 @@ $$(in^4) = (in^3)\times t_{throat}$$
 
 
 
+
+
+
 **Calculating Stress**
 
-A weld group may be subjected to loading in all 6 degrees of freedom. These forces are then translated into shear stresses using the geometric properties above and the elastic stress formula presented below. Be careful when specifying negative out-of-plane axial force (i.e. compression). Compression is typically transferred through other mechanisms like bearing rather than through the weld itself. To encourage more deliberation on the part of the user, "Vz" was renamed to "tension" during development.
+A weld group may be subjected to loading in all 6 degrees of freedom. These forces are then translated into stresses using the geometric properties above and the elastic stress formulas below. Be careful when specifying negative out-of-plane axial force (i.e. compression). Compression is typically transferred through other mechanisms like bearing rather than through the weld itself. To encourage more deliberation on the part of the user, "Vz" was renamed to "tension" during development.
 
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_dof.png?raw=true" alt="demo" style="width: 60%;" />
@@ -304,8 +308,7 @@ $$\tau_{z,Mx} = \frac{M_x y_i}{I_x}$$
 $$\tau_{z,My} =  \frac{M_y x_i}{I_y}$$
 
 
-
-Sum the above terms together for the total shear stress about the three axes.
+Sum the above terms together for the total shear stress about the three weld axes.
 
 $$\tau_{x,total} = \tau_{x,direct} + \tau_{x,torsional}$$
 
@@ -314,25 +317,14 @@ $$\tau_{y,total} = \tau_{y,direct} + \tau_{y,torsional}$$
 $$\tau_{z,total} = \tau_{z,direct} + \tau_{z,Mx} + \tau_{z,My}$$
 
 
-
 We can get the resultant shear stress by adding the components vectorially.
 
-$$\tau_{resultant} = \sqrt{\tau_{x,total}^2 + \tau_{y,total}^2 + \tau_{z,total}^2}$$
+$$\tau_{resultant} = \sqrt{\tau_{x,total}^2 + \tau_{y,total}^2 + \tau_{z,total}^2} \leq \phi 0.6 F_{EXX}$$
 
 
-
-Unlike bolts, we do not differentiate between tension and shear (i.e. normal and shear stress) because we assume **all welds to fail in shear along the throat length**. In other words, assume zero normal stresses.
-
-$$\sigma_{xx} = \sigma_{yy} = \sigma_{zz} = 0$$
-
-
-According to the Von-Mises failure criterion:
+If we look at the Von-Mises failure criterion with pure shear:
 
 $$\sigma_v^2 = \frac{1}{2}\times[(\sigma_{xx}-\sigma_{yy})^2 + (\sigma_{yy}-\sigma_{zz})^2 + (\sigma_{zz}-\sigma_{xx})^2 + 6(\tau_{yz}^2 + \tau_{zx}^2 + \tau_{xy}^2)]$$
-
-
-
-Which in our case reduces to:
 
 $$\sigma_v^2 = \frac{6}{2}\times[\tau_{yz}^2 + \tau_{zx}^2 + \tau_{xy}^2]$$
 
@@ -341,21 +333,22 @@ $$\sigma_v = \sqrt{3} \times \sqrt{\tau_{yz}^2 + \tau_{zx}^2 + \tau_{xy}^2} \leq
 $$\sigma_v = \sqrt{\tau_{yz}^2 + \tau_{zx}^2 + \tau_{xy}^2} \leq \frac{F_y}{\sqrt{3}} \approx 0.6F_y$$
 
 
-CJPs and PJPs often do have normal stress components. But to keep things simple and conservative, assume the sigma term is multiplied by 3 as well.
+The assumption of pure shear stress is technically not correct. In a fillet weld, there are actually three failure surfaces. 
+
+1. Vertical plane under shear stress
+2. Diagonal plane along throat under shear + normal stress
+3. Horizontal plane under normal stress
+
+The third plane under normal stress does not govern, and the first and second plane checks are functionally equivalent. [Refer to this Engineering StackExchange discussion for more info.](https://engineering.stackexchange.com/questions/37181/why-is-fillet-weld-assumed-to-be-in-a-state-of-pure-shear-stress). Although assuming pure shear isn't technically correct, it is simple. A more correct way to add the stress vectors would look like this:
 
 $$\sigma_v = \sqrt{\sigma_{transverse}^2 + 3(\tau_{transverse}^2 + \tau_{longitudinal}^2}) \leq F_y$$
 
 
-Here is an example illustrating how $V_y$ and $M_x$ is resolved into a resultant shear stress:
-
-<div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_stress_example.png?raw=true" alt="demo" style="width: 80%;" />
-</div>
 
 
 Limitations of the elastic method:
 
-* The elastic method does not allow any plasticity which means it can be quite conservative whenever there are applied moments. Plastic method and the instant center of rotation method are less conservative if you are looking to justify additional capacity.
+* The elastic method does not allow any plasticity which means it can be conservative when moments are applied. Plastic method and the instant center of rotation method are less conservative if you are looking to justify additional capacity.
 * The elastic method does not take into account deformation compatibility and the effect of load angle. Welds are assumed to share loads equally under direct shear. In actuality, welds oriented transversely to applied loading have up to 50% higher capacity and stiffness (but lower ductility). Transversely loaded welds tend to fracture first before longitudinal welds can reach their full strength. Refer to the steel construction manual for more guidance on this matter.
 * For out-of-plane moment, contribution of any bearing surface is ignored and the neutral axis is assumed to occur at the centroid.
 
@@ -366,7 +359,6 @@ Limitations of the elastic method:
 
 - Sign convention follows the right-hand rule. right is +X, top is +Y, out-of-page is +Z
 - EZweld is unit-agnostic. You can either use [kip, in] or [N, mm] as long as you are consistent.
-- Welds are assumed to fail in pure shear without any normal stress.
 - The combined stress formula is only valid when applied about a weld group's principal orientation. EZweld will warn the user if a weld group needs to be rotated. The applied moment should also be resolved to its principal components.
 
 
