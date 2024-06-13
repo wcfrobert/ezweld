@@ -225,12 +225,12 @@ In many engineering applications, welds are thought of as a 1-dimensional "line"
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_properties.png?raw=true" alt="demo" style="width: 60%;" />
 </div>
 
-One notable drawback of treating welds as lines is that having one dimension less gets kind of confusing when weld groups have welds with variable thicknesses. Where variable weld thicknesses are defined, EZweld calculates an "effective" length proportional to the minimum thickness within the group. 
+One notable drawback of treating welds as lines is that it gets kind of confusing when weld groups have welds with variable thicknesses. Where variable weld thicknesses are defined, EZweld calculates an "effective" length proportional to the minimum thickness within the group. 
 
 $$L_{effective} = \frac{t}{t_{min}} \times L_i$$
 
 
-This modified length is then used to calculate the geometric properties with one dimension less.
+This modified length is then used to calculate the "one dimension less" geometric properties.
 
 $$x_{cg} = \frac{\sum x_i L_i}{\sum L}$$
 
@@ -260,7 +260,7 @@ $$S_{y,left} = \frac{I_y}{c_{y1}}$$
 
 $$S_{y,right} = \frac{I_y}{c_{y2}}$$
 
-We are essentially just setting thickness to unity. It is easy to convert between the two conventions:
+We are essentially just setting thickness to unity. It is quite easy to convert between the two conventions:
 
 $$(ksi) = \frac{(k/in)}{t_{throat}}$$
 
@@ -333,17 +333,17 @@ $$\sigma_v = \sqrt{3} \times \sqrt{\tau_{yz}^2 + \tau_{zx}^2 + \tau_{xy}^2} \leq
 $$\sigma_v = \sqrt{\tau_{yz}^2 + \tau_{zx}^2 + \tau_{xy}^2} \leq \frac{F_y}{\sqrt{3}} \approx 0.6F_y$$
 
 
-The assumption of pure shear stress is technically not correct. In a fillet weld, there are actually three failure surfaces. 
+The assumption of pure shear stress is technically not correct. In fact, two of the shear terms above should be under the same squared term. Fillet welds actually have three failure planes. 
 
 1. Vertical plane under shear stress
-2. Diagonal plane along throat under shear + normal stress
+2. Diagonal plane under shear + normal stress
 3. Horizontal plane under normal stress
 
-The third plane under normal stress does not govern, and the first and second plane checks are functionally equivalent. [Refer to this Engineering StackExchange discussion for more info.](https://engineering.stackexchange.com/questions/37181/why-is-fillet-weld-assumed-to-be-in-a-state-of-pure-shear-stress). Although assuming pure shear isn't technically correct, it is simple. A more correct way to add the stress vectors would look like this:
+The first and second plane checks are functionally equivalent, and the third plane under normal stress does not govern. [Refer to this Engineering StackExchange discussion for more info](https://engineering.stackexchange.com/questions/37181/why-is-fillet-weld-assumed-to-be-in-a-state-of-pure-shear-stress). Although assuming pure shear isn't technically correct, it is simple and it is conservative.
+
+A more correct way to add the stress vectors would look like the equation below. CJPs and PJPs along welded butt joints obviously have a normal stress component. Transversely loaded fillet welds have both $\sigma = \frac{F}{\sqrt{2}}$ and $\tau = \frac{F}{\sqrt{2}}$ along the throat. Following the KISS principle, just put all the stress contribution into $3\tau$ term.
 
 $$\sigma_v = \sqrt{\sigma_{transverse}^2 + 3(\tau_{transverse}^2 + \tau_{longitudinal}^2}) \leq F_y$$
-
-
 
 
 Limitations of the elastic method:
