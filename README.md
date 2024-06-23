@@ -379,13 +379,18 @@ You might recall that stress vectors can't just be rotated because the associate
 
 Here are the steps to defining the local coordinate system of a fillet weld. First, the longitudinal axis **(x')** is established by the start and end point of the weld line defined by the user.
 
-$$u_{start}=`\{x_i,y_i,0`\}, \:  u_{end}=`\{x_i,y_i,0`\}$$
+```math
+u_{start}=\{x_i,y_i,0\}, \:  u_{end}=\{x_i,y_i,0\}
+```
 
 $$e_x =\frac{u_{end} - u_{start}}{||u_{end} - u_{start}||} $$
 
+
 Then we let the transverse axis **(z')** be exactly aligned with Z, which points upward.
 
-$$e_z=`\{0,0,1 `\}$$
+```math
+e_z=\{0,0,1 \}
+```
 
 The last local axis **(y')** is determined via a cross product. Notice we crossed z' with x' to respect the right-hand rule.
 
@@ -400,16 +405,20 @@ e_z\end{bmatrix}$$
 
 In addition, we want to apply a negative 45 degree rotation about the x-axis. The corresponding rotation matrix is:
 
-$$ [T_{b}] = 
-\begin{bmatrix}
+$$ [T_{b}] = \begin{bmatrix}
 1 & 0 & 0\\
 0 & cos(\beta) & -sin(\beta)\\
-0 & sin(\beta) & cos(\beta)
-\end{bmatrix}\\$$
+0 & sin(\beta) & cos(\beta)\end{bmatrix}\\$$
 
-Apply these two successive transformations to get the remapped force per unit length, divide by thickness to get stress again
+Apply these two successive transformations to get the remapped force per unit length, divide by thickness to get stress again.
 
-$$\{ \sigma_{\perp},  \tau_{\parallel} , \tau_{\perp}\} = [T_b][T] \{ v_{x},  v_{y} , v_{z} \}$$
+
+
+```math
+\{ \sigma_{\perp},  \tau_{\parallel} , \tau_{\perp}\} = [T_b][T] \{ v_{x},  v_{y} , v_{z} \}
+```
+
+
 
 After we have performed the coordinate transformation, we can finally calculate the Von-Mises criterion for fillet welds. 
 
@@ -421,11 +430,11 @@ $$\sigma_v = \sqrt{\sigma_{transverse}^2 + 3[\tau_{parallel}^2+\tau_{transverse}
 
 ## Assumptions and Limitations
 
-**General:**
-
 - Sign convention follows the right-hand rule. right is +X, top is +Y, out-of-page is +Z
 
 - EZweld is unit-agnostic. You can either use [kip, in] or [N, mm] as long as you are consistent.
+
+- Be careful when specifying negative out-of-plane axial force (i.e. compression). Sometimes compression is typically transferred through other mechanisms like bearing rather than through the weld itself.
 
 - The combined stress formula is only valid when applied about a weld group's principal orientation. EZweld will warn the user if a weld group needs to be rotated. The applied moment should also be resolved to its principal components.
 
@@ -441,18 +450,9 @@ $$\sigma_v = \sqrt{\sigma_{transverse}^2 + 3[\tau_{parallel}^2+\tau_{transverse}
 
   $$\theta_p = 0.5\times tan^{-1}(\frac{I_{xy}}{I_x - I_y})$$
 
-
-- Be careful when specifying negative out-of-plane axial force (i.e. compression). Sometimes compression is typically transferred through other mechanisms like bearing rather than through the weld itself.
-
-
-
-**Limitations of the elastic method:**
-
 * A key limitation of the elastic method is the assumption that no bearing surface exists. Consequently, out-of-plane moment must be resolved through the welds alone. This is done by assuming a very conservative neutral axis location that coincides with the weld group centroid, which means half of the weld fibers are put into compression to maintain equilibrium.
 * The elastic method does not take into account deformation compatibility and the effect of load angle. Welds are assumed to share loads equally under direct shear. In actuality, welds oriented transversely to applied loading have up to 50% higher capacity and stiffness (but lower ductility). Refer to the steel construction manual for more guidance on this matter.
-* The elastic method is conservative compared to alternative methods like the plastic method and the instant center of rotation method.
 
-**Disclaimer:** this package is meant for <u>personal and educational use only</u>.
 
 
 ## License
@@ -460,3 +460,7 @@ $$\sigma_v = \sqrt{\sigma_{transverse}^2 + 3[\tau_{parallel}^2+\tau_{transverse}
 MIT License
 
 Copyright (c) 2024 Robert Wang
+
+
+
+**Disclaimer:** this package is meant for personal and educational use only
