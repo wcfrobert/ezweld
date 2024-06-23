@@ -220,7 +220,7 @@ Notations:
 
 **Geometric Properties - (Treating Welds as Lines)**
 
-In many engineering contexts, welds are thought of as 1-dimensional "lines". As a result, weld stresses are expressed as **force per unit length** (e.g. kip/in) rather than force per unit area (e.g. ksi). But why make this unnecessary abstraction when the above geometric formulas are perfectly usable? After some digging, It turns out the main motivation for using the "line method" is a fascinating piece of engineering history, with its origin in the slide rule era before wide commercial adoption of calculators.
+In many engineering contexts, welds are thought of as 1-dimensional "lines". As a result, weld stresses are expressed as **force per unit length** (e.g. kip/in) rather than force per unit area (e.g. ksi). But why make this unnecessary abstraction when the above geometric formulas are perfectly usable? The origin of this convention has its origin in the slide rule era before widespread commercial adoption of calculators.
 
 Quoting Omer W. Blodgett's in his textbook first published in 1966. Chapter 2.2-8:
 
@@ -228,7 +228,7 @@ Quoting Omer W. Blodgett's in his textbook first published in 1966. Chapter 2.2-
 
 It turns out the "force-per-unit-length" convention is a remnant of an era when dealing with numbers too big or too small incurs very real economic cost. In Chapter 7.4-7, Blodgett writes about two other reasons for why treating welds as lines is preferable. In summary:
 
-* With the line method, demands can be calculated without specifying a thickness. Instead, we can calculate a demand, then specify a thickness afterwards that would work for a connection. This is important in the pre-calculator era where engineering calculations are not automated, and a change in the input parameter would mean revising pages of hand calculation.
+* With the line method, demands can be calculated without specifying a thickness. Instead, we can calculate a demand, then specify a thickness that would work afterwards. This is important in the pre-calculator era where engineering calculations are not automated, and a change in the input parameter would mean revising pages of hand calculation.
 * Stress distribution within a weld is affected by many factors like eccentricities, notch effects, fillet shape, and etc. The resulting stress must then be combined which can make hand calculation too burdensome. the "force per unit length" convention is a design simplification that circumvents the thorny problem of stress transformations and change of basis (refer to the next few sections for more info).
 
 Here a table from the Omer W. Blodgett textbook that provides equations for common weld group geometric properties (1 dimensions less):
@@ -236,7 +236,7 @@ Here a table from the Omer W. Blodgett textbook that provides equations for comm
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_properties.png?raw=true" alt="demo" style="width: 60%;" />
 </div>
-The "line method" assumes that thicknesses within a weld group is uniform. This is almost always true but not always. The above table should NOT be used for **weld groups with variable thicknesses**. In the rare case that we have variable thicknesses within a weld group, we must first calculate an "effective" length in proportional with the minimum thickness within the weld group.
+The line method also assumes that thicknesses within a weld group is uniform. This is NOT always the case. The above table should NOT be used for **weld groups with variable thicknesses.** In the rare case that we have variable thicknesses within a weld group, we must first calculate an "effective" length in proportional with the minimum thickness within the weld group.
 
 $$L_{effective} = \frac{t}{t_{min}} \times L_i$$
 
@@ -273,11 +273,9 @@ $$S_{y,right} = \frac{I_y}{c_{y2}}$$
 
 Alternatively, if dealing with one-dimension less is confusing to you, simply use the formulas from the previous section with thickness = 1.0. It is also quite easy to convert between the two conventions:
 
-$$(ksi) = \frac{(k/in)}{t_{throat}}$$
+$$(ksi) = \frac{(k/in)}{t_{weld}}$$
 
-For uniform thickness welds, section properties can also be easily translated. For example:
-
-$$(in^4) = (in^3)\times t_{throat}$$
+$$(in^4) = (in^3)\times t_{weld}$$
 
 
 
@@ -328,13 +326,13 @@ $$v_{y,total} = v_{y,direct} + v_{y,torsional}$$
 
 $$v_{z,total} = v_{z,direct} + v_{z,Mx} + v_{z,My}$$
 
-
+Depending on the conventions used, the above terms are either expressed as (force/length) or (force/area).
 
 
 
 **Resultant Stress - Simplified Approach**
 
-The AISC steel construction manual allows for a simplified approach of combining the three components above. Using the "force-per-unit-length" convention, the three components are added vectorially into a "resultant shear force per unit length", then compared with an allowable shear capacity.
+The AISC steel construction manual allows for a simplified approach of combining the three components above. Using the "force-per-unit-length" convention, the three components are added vectorially into a resultant shear force, then compared with an allowable shear capacity.
 
 $$v_{resultant} = \sqrt{v_{x,total}^2 + v_{y,total}^2 + v_{z,total}^2} \leq \phi\frac{F_{EXX}}{\sqrt{3}}t_{weld} \approx \phi0.6F_{EXX}t_{weld}$$
 
@@ -344,7 +342,7 @@ This is the default approach taken by EZweld. If thickness values are specified 
 
 **Resultant Stress - Von-Mises for PJP Welds**
 
-The assumption of pure shear, and vector addition without stress transformation is convenient but not entirely accurate (but then again neither is the elastic method). For example, complete-joint-penetration (CJP) welds and partial-joint-penetration (PJP) welds does have a normal stress component. Writing out the full Von-Mises yield criterion below, notice how the $\sigma$ term is not multiplied by 3, and thus $\sqrt{3}$ does not factor out cleanly. The simplified approach lumps the normal stress term with the other shear stresses.
+The assumption of pure shear, and vector addition without stress transformation is convenient but not entirely accurate (but then again neither is the elastic method). For example, complete-joint-penetration (CJP) welds and partial-joint-penetration (PJP) welds does have a normal stress component. Writing out the full Von-Mises yield criterion below, notice how the $\sigma$ term is not multiplied by 3, and thus $\sqrt{3}$ does not factor out cleanly. The simplified approach above lumps the normal stress term with the other shear stress terms which is conservative.
 
 $$\sigma_v = \sqrt{\frac{1}{2}[(\sigma_{xx}-\sigma_{yy})^2+(\sigma_{yy}-\sigma_{zz})^2+(\sigma_{zz}-\sigma_{xx})^2] + 3[\tau_{xy}^2+\tau_{yz}^2+\tau_{xz}^2]} \leq F_{EXX}$$
 
@@ -362,7 +360,7 @@ We did not need to define a local coordinate system because the global vertical 
 
 In the case of fillet welds, expressing stress using the global coordinate system is no longer sufficient. We must established a local coordinate system to map global stress to a local stress. 
 
-$$\{ v_{x},  v_{y} , v_{z} \} \rightarrow \{ \sigma_{\perp},  \tau_{\parallel} , \tau_{\perp} \}$$
+$$`\{ v_{x},  v_{y} , v_{z} `\} \rightarrow `\{ \sigma_{\perp},  \tau_{\parallel} , \tau_{\perp} `\}$$
 
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_coord.png?raw=true" alt="demo" style="width: 60%;" />
@@ -377,13 +375,13 @@ You might recall that stress vectors can't just be rotated because the associate
 
 Here are the steps to defining the local coordinate system of a fillet weld. First, the longitudinal axis **(x')** is established by the start and end point of the weld line defined by the user.
 
-$$u_{start}=\{x_i,y_i,0\}, \:  u_{end}=\{x_i,y_i,0\}$$
+$$u_{start}=`\{x_i,y_i,0`\}, \:  u_{end}=`\{x_i,y_i,0`\}$$
 
 $$e_x =\frac{u_{end} - u_{start}}{||u_{end} - u_{start}||} $$
 
 Then we let the transverse axis **(z')** be exactly aligned with Z, which points upward.
 
-$$e_z=\{0,0,1 \}$$
+$$e_z=`\{0,0,1 `\}$$
 
 The last local axis **(y')** is determined via a cross product. Notice we crossed z' with x' to respect the right-hand rule.
 
@@ -391,7 +389,10 @@ $$e_y = \frac{e_z \times e_x}{||e_z \times e_x||} $$
 
 Now we can define a geometric transformation matrix very similar to what we use for stiffness matrices in structural analysis.
 
-$$[T] = \begin{bmatrix} e_x \\ e_y \\ e_z \\ \end{bmatrix}\\$$
+$$ [T_{b}] = \begin{bmatrix}
+e_x\\
+e_y\\
+e_z\end{bmatrix}$$
 
 In addition, we want to apply a negative 45 degree rotation about the x-axis. The corresponding rotation matrix is:
 
