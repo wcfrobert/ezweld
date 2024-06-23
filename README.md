@@ -154,7 +154,7 @@ For example, here's the output from `help(ezweld.weldgroup.WeldGroup.add_line)`
 
 **Section Analogy**
 
-A weld transfers force between two connected members. At the plane of connection, we can think of the weld as the member itself; having its own geometric properties. Therefore, determining a weld group's stress state is entirely analogous to determining stress on a cross-section using the elastic stress formulas. Here is a figure from the “Design of Welded Structures” textbook by Omer W. Blodgett which illustrates this analogy.
+A weld group transfers force between two connected members. At the plane of connection, we can think of the weld as the member itself; having its own geometric properties. Therefore, determining a weld group's stress state is entirely analogous to determining stress on a cross-section using the elastic stress formulas. Here is a figure from the “Design of Welded Structures” textbook by Omer W. Blodgett which illustrates this analogy.
 
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_comparison.png?raw=true" alt="demo" style="width: 50%;" />
@@ -214,7 +214,7 @@ Notations:
 
 **Force/Length Convention - Treating Welds as Lines**
 
-In the structural engineering context, welds are often thought of as 1-dimensional "lines". Results are often are expressed as **force per unit length** (e.g. kip/in) rather than force per unit area (e.g. ksi). But why make this unnecessary abstraction when the above section property formulas are perfectly usable? As it turns out, the origin of this convention has its origin in the slide rule era before widespread commercial adoption of calculators.
+In the structural engineering context, welds are often thought of as 1-dimensional "lines". Results are often expressed as **force per unit length** (e.g. kip/in) rather than force per unit area (e.g. ksi). But why make this unnecessary abstraction when the above section property formulas are perfectly usable? As it turns out, the weld "line" convention has its origin in the slide rule era before calculators.
 
 Quoting Omer W. Blodgett's in his textbook first published in 1966. Chapter 2.2-8:
 
@@ -222,7 +222,7 @@ Quoting Omer W. Blodgett's in his textbook first published in 1966. Chapter 2.2-
 
 In Chapter 7.4-7, Blodgett writes about two other reasons for why treating welds as lines is preferable. In summary:
 
-* With the line method, demands can be calculated without specifying a thickness. Instead, we can calculate a demand, then specify a thickness that would work afterwards. This is important in the pre-calculator era where engineering calculations are not automated, and a change in the input parameter would mean revising pages of calculation by hand.
+* With the line method, demands can be calculated without specifying a thickness upfront. In effect, weld thickness becomes a design parameter where we can calculate a demand, then specify a thickness that would work afterwards. This is important in the pre-calculator era where engineering calculations are not automated, and a change in the input parameter would mean revising pages of calculation by hand.
 * Stress combination calculations is complicated and very burdensome to do by hand. The "force per unit length" convention is a design simplification that circumvents the thorny problem of stress transformations and change of basis (refer to the next few sections for more info).
 
 Here a table from the Omer W. Blodgett textbook that provides equations for common weld group geometric properties (1 dimensions less):
@@ -313,7 +313,7 @@ $$v_{z,My} =  \frac{-M_y x_i}{I_y}$$
 
 
 
-Sum the above terms together.
+Sum the above terms together. Depending on the conventions used, these terms are either expressed as (force/length) or (force/area).
 
 $$v_{x,total} = v_{x,direct} + v_{x,torsional}$$
 
@@ -321,17 +321,15 @@ $$v_{y,total} = v_{y,direct} + v_{y,torsional}$$
 
 $$v_{z,total} = v_{z,direct} + v_{z,Mx} + v_{z,My}$$
 
-Depending on the conventions used, the above terms are either expressed as (force/length) or (force/area).
-
 
 
 **Resultant Stress - Simplified Approach**
 
-The AISC steel construction manual allows for a simplified approach of combining the three components above. Using the "force-per-unit-length" convention, the three components are added vectorially into a resultant shear force, then compared with an allowable shear capacity.
+The AISC steel construction manual allows for a simplified approach for determining a resultant stress. Using the "weld-as-line" convention (force/length), the three components above are simply added vectorially into a resultant shear force, then compared with an allowable shear capacity.
 
 $$v_{resultant} = \sqrt{v_{x,total}^2 + v_{y,total}^2 + v_{z,total}^2} \leq \phi\frac{F_{EXX}}{\sqrt{3}}t_{weld} \approx \phi0.6F_{EXX}t_{weld}$$
 
-This is the default approach taken by EZweld. If thickness values are specified by the user, then EZweld will also calculate Von-Mises stress ($\sigma_v$) as outlined below.
+This is the default approach taken by EZweld. If thickness values are specified by the user, then EZweld will also calculate a Von-Mises stress ($\sigma_v$) as outlined below.
 
 
 
@@ -343,7 +341,7 @@ $$\sigma_v = \sqrt{\frac{1}{2}[(\sigma_{xx}-\sigma_{yy})^2+(\sigma_{yy}-\sigma_{
 
 $$\sigma_v = \sqrt{\sigma_{zz}^2 + 3[\tau_{xy}^2+\tau_{yz}^2]}$$
 
-In the case PJPs, the Von-Mises criterion can be expressed as a function of global stress terms without any coordinate transformation. We do not need to define a local coordinate system because the global vertical axis (Z) always corresponds with the normal stress vector. For the in-plane shear stresses, the resultant magnitude ($\tau_{xy}^2 + \tau_{yz}^2$) is always the same regardless our coordinate system. 
+In the case PJPs, the Von-Mises criterion can be expressed as a function of global stress terms without any coordinate transformation. We do not need to define a local coordinate system because the global vertical axis (Z) always corresponds with the normal stress vector, and the resultant in-plane stress resultant ($\tau_{xy}^2 + \tau_{yz}^2$) is always the same regardless our coordinate system. 
 
 Von-Mises stress for PJPs can be calculated using the equation below. Do not use the "force-per-unit-length" convention here.
 
@@ -364,7 +362,11 @@ In the case of fillet welds, expressing stress using the global coordinate syste
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/fillet_coord.png?raw=true" alt="demo" style="width: 40%;" />
 </div>
+
+
 A fillet weld actually has three failure planes, and we typically assume failure to occur along the inclined throat of the weld. Therefore, the local coordinate system must also be rotated 45 degrees. Refer to this [Engineering Stack Exchange post](https://engineering.stackexchange.com/questions/37181/why-is-fillet-weld-assumed-to-be-in-a-state-of-pure-shear-stress) for more info. 
+
+
 
 First, the longitudinal basis vector **(x')** is established by the start and end point of the weld line defined by the user.
 
@@ -375,7 +377,7 @@ u_{start}=\{x_i,y_i,0\}, \:  u_{end}=\{x_i,y_i,0\}
 $$e_x =\frac{u_{end} - u_{start}}{||u_{end} - u_{start}||} $$
 
 
-Then we let one o the transverse basis vector **(z')** be exactly aligned with Z, which points upward.
+Then we let one of the transverse basis vector **(z')** be exactly aligned with Z, which points upward.
 
 ```math
 e_z=\{0,0,1 \}
@@ -385,13 +387,18 @@ The last basis **(y')** is determined via a cross product. Notice how we crossed
 
 $$e_y = \frac{e_z \times e_x}{||e_z \times e_x||} $$
 
-Now we can define a 3x3 geometric transformation matrix using these three basis.
+Now we can define a 3x3 geometric transformation matrix.
 
 $$ [T] = [e_x, e_y, e_z]$$
 
 In addition, we want to apply a negative 45 degree rotation about the x-axis:
 
-$$ [T_{45}] = \begin{bmatrix} 1 & 0 & 0\\ 0 & cos(45) & -sin(45)\\ 0 & sin(45) & cos(45)\end{bmatrix} = \begin{bmatrix} 1 & 0 & 0\\ 0 & 1/\sqrt{2} & -1/\sqrt{2}\\ 0 & 1/\sqrt{2} & 1/\sqrt{2}\end{bmatrix}$$
+$$
+[T_{45}] = \begin{bmatrix}
+1 & 0 & 0\\ 
+0 & cos(45) & -sin(45)\\ 
+0 & sin(45) & cos(45)\end{bmatrix}
+$$
 
 Apply these two successive transformations to get the stress expressed in the local coordinate system.
 
