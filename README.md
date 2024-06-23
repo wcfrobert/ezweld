@@ -236,6 +236,7 @@ Here a table from the Omer W. Blodgett textbook that provides equations for comm
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_properties.png?raw=true" alt="demo" style="width: 60%;" />
 </div>
+
 The line method also assumes that thicknesses within a weld group is uniform. This is NOT always the case. The above table should NOT be used for **weld groups with variable thicknesses.** In the rare case that we have variable thicknesses within a weld group, we must first calculate an "effective" length in proportional with the minimum thickness within the weld group.
 
 $$L_{effective} = \frac{t}{t_{min}} \times L_i$$
@@ -360,7 +361,10 @@ We did not need to define a local coordinate system because the global vertical 
 
 In the case of fillet welds, expressing stress using the global coordinate system is no longer sufficient. We must established a local coordinate system to map global stress to a local stress. 
 
-$$`\{ v_{x},  v_{y} , v_{z} `\} \rightarrow `\{ \sigma_{\perp},  \tau_{\parallel} , \tau_{\perp} `\}$$
+```math
+\{ v_{x},  v_{y} , v_{z} \} \rightarrow \{ \sigma_{\perp},  \tau_{\parallel} , \tau_{\perp} \}
+```
+
 
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_coord.png?raw=true" alt="demo" style="width: 60%;" />
