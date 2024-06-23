@@ -75,10 +75,6 @@ class WeldGroup:
     def add_rectangle(self, xo, yo, width, height, xsegments, ysegments, thickness):
         """
         Add a rectangular weld group by specifying the bottom left corner + width and height
-        
-        Note: within structural engineering, weld throat thickness is usually not specified
-        until later, and forces are in force/length rather than stress. By default, 
-        assume 5/16 inch throat thickness.
         """
         pt1 = [xo, yo]
         pt2 = [xo+width, yo]
@@ -94,10 +90,6 @@ class WeldGroup:
     def add_circle(self, xo, yo, diameter, segments, thickness):
         """
         Add a circular weld group by specifying the center + a diameter
-        
-        Note: within structural engineering, weld throat thickness is usually not specified
-        until later, and forces are in force/length rather than stress. By default, 
-        assume 5/16 inch throat thickness.
         """
         # handles exception where segment < 4
         if segments < 4:
@@ -127,7 +119,7 @@ class WeldGroup:
             start           list:: [x, y] coordinate of first point
             end             list:: [x, y] coordiante of the second point
             segments        int:: number of weld patches to draw along the line
-            thickness       float:: throat thickness of weld line.
+            thickness       float:: thickness of weld line.
             
         Return:
             None
