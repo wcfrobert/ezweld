@@ -72,7 +72,7 @@ class WeldGroup:
         self.df_welds = None
     
     
-    def add_rectangle(self, xo, yo, width, height, xsegments, ysegments, thickness):
+    def add_rectangle(self, xo, yo, width, height, xsegments, ysegments, thickness=None):
         """
         Add a rectangular weld group by specifying the bottom left corner + width and height
         """
@@ -87,7 +87,7 @@ class WeldGroup:
         self.add_line(start=pt2, end=pt3, segments=ysegments, thickness=thickness)
             
         
-    def add_circle(self, xo, yo, diameter, segments, thickness):
+    def add_circle(self, xo, yo, diameter, segments, thickness=None):
         """
         Add a circular weld group by specifying the center + a diameter
         """
@@ -111,7 +111,7 @@ class WeldGroup:
             self.add_line(start=pt1, end=pt2, segments=1, thickness=thickness)
     
     
-    def add_line(self, start, end, segments, thickness):
+    def add_line(self, start, end, segments, thickness=None):
         """
         Add a weld strip to the weld group by specifying two points. 
         
@@ -119,7 +119,7 @@ class WeldGroup:
             start           list:: [x, y] coordinate of first point
             end             list:: [x, y] coordiante of the second point
             segments        int:: number of weld patches to draw along the line
-            thickness       float:: thickness of weld line.
+            thickness       float:: size of the weld line. Effective throat thickness for PJPs and Leg thickness for fillet
             
         Return:
             None
