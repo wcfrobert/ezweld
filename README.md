@@ -53,6 +53,7 @@ Sign convention shown below:
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_dof.png?raw=true" alt="demo" style="width: 60%;" />
 </div>
+
 `weld_group.preview()` returns a matplotlib figure showing what the weld group looks like and its geometric properties.
 
 
@@ -318,7 +319,7 @@ $$v_{y,total} = v_{y,direct} + v_{y,torsional}$$
 
 $$v_{z,total} = v_{z,direct} + v_{z,Mx} + v_{z,My}$$
 
-The three terms above are then combined into a single value then compared to a design capacity. In the next two sections, $\tau$ will be used for stress, $v$ will be used for unit force.
+The three terms above are then combined into a single value and compared to a design capacity. In the next two sections, $\tau$ will be used to denote stress, $v$ will be used to denote unit force.
 
 
 
@@ -349,7 +350,7 @@ $$\sigma_v = \sqrt{\tau_{z, total}^2 + 3[\tau_{x, total}^2+\tau_{y, total}^2]} \
 In the case of fillet welds, we must first established a local coordinate system to map global stress to a local stress. 
 
 ```math
-\{ \tau_{x},  \tau_{y} , \tau_{z} \} \rightarrow \{ \sigma_{\perp},  \tau_{\parallel} , \tau_{\perp} \}
+\{ \tau_{X},  \tau_{Y} , \tau_{Z} \} \rightarrow \{ \sigma_{\perp},  \tau_{\parallel} , \tau_{\perp} \}
 ```
 
 
@@ -361,7 +362,7 @@ In the case of fillet welds, we must first established a local coordinate system
 </div>
 
 
-A fillet weld actually has three failure planes, and we typically assume failure to occur along the inclined throat of the weld. Therefore, the local coordinate system must also be rotated 45 degrees. Refer to this [Engineering Stack Exchange post](https://engineering.stackexchange.com/questions/37181/why-is-fillet-weld-assumed-to-be-in-a-state-of-pure-shear-stress) for more info. Let's first establish the necessary transformation matrix for each patch of weld.
+A fillet weld actually has three failure planes, but we typically assume failure to occur along the inclined throat of the weld. Therefore, the local coordinate system must also be rotated 45 degrees. Refer to this [Engineering Stack Exchange post](https://engineering.stackexchange.com/questions/37181/why-is-fillet-weld-assumed-to-be-in-a-state-of-pure-shear-stress) for more info. Let's first establish the necessary transformation matrix.
 
 First, the longitudinal basis vector **(x')** is established by the start and end point of the weld line defined by the user.
 
@@ -378,7 +379,7 @@ Then we let one of the transverse basis vector **(z')** be exactly aligned with 
 e_z=\{0,0,1 \}
 ```
 
-The last basis **(y')** is determined via a cross product. Notice how we crossed z' with x' to align with the right-hand axis convention.
+The last basis **(y')** is determined via a cross product. Notice how we crossed z' with x' to align with the right-hand convention.
 
 $$e_y = \frac{e_z \times e_x}{||e_z \times e_x||} $$
 

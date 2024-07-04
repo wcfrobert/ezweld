@@ -1,1 +1,1 @@
-import ezweld.weldgroup
+from .weldgroup import WeldGroup
