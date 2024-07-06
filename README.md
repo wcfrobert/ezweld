@@ -265,7 +265,11 @@ $$S_{y,right} = \frac{I_y}{c_{y2}}$$
 
 An important limitation of the line method is that it assumes uniform thickness within a weld group. The above table should NOT be used for **weld groups with variable thicknesses.** In the rare case that a weld group has variable thickness, first calculate an "effective" length in proportional with the minimum thickness within the weld group, then use this modified length instead in the equations above.
 
-$$L_{effective} = \frac{t}{t_{min}} \times L_i$$
+$$L_{effective,i} = \frac{t_i}{t_{min}} \times L_i$$
+
+The resulting forces are also modified:
+
+$$v_i\times(L_{effective,i} / L_i)$$
 
 It is quite easy to convert between the two conventions if you have uniform thickness:
 
@@ -293,9 +297,9 @@ $$v_{y,direct} = \frac{-V_y}{A_w}$$
 Stress due to in-plane torsion ($torsion$):
 
 
-$$v_{x,torsional} = \frac{torsion \times y_i}{J}$$
+$$v_{x,torsional} = \frac{torsion \times (y_i-y_{cg})}{J}$$
 
-$$v_{y,torsional} = \frac{-torsion \times x_i}{J}$$
+$$v_{y,torsional} = \frac{-torsion \times (x_i - x_{cg})}{J}$$
 
 
 
@@ -304,9 +308,9 @@ Stress from out-of-plane forces ($tension$, $M_x$, $M_y$):
 
 $$v_{z,direct} = \frac{-tension}{A_w}$$
 
-$$v_{z,Mx} = \frac{M_x y_i}{I_x}$$
+$$v_{z,Mx} = \frac{M_x (y_i-y_{cg})}{I_x}$$
 
-$$v_{z,My} =  \frac{-M_y x_i}{I_y}$$
+$$v_{z,My} =  \frac{M_y (x_i-x_{cg})}{I_y}$$
 
 
 

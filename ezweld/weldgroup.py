@@ -24,7 +24,7 @@ class WeldGroup:
     """
     def __init__(self):
         # result expressed as force/length or stress
-        self.solution_mode = "stress"  # by default. Switches to "force" if thickness not specified
+        self.output_mode = "stress"  # default
         
         # applied force
         self.Vx = None
@@ -34,11 +34,9 @@ class WeldGroup:
         self.My = None
         self.torsion = None
         
-        # centroid
+        # geometric properties (stress)
         self.x_centroid = None
         self.y_centroid = None
-        
-        # geometric properties (stress)
         self.A = None
         self.Ix = None
         self.Iy = None
@@ -51,18 +49,21 @@ class WeldGroup:
         self.Sy2 = None
         
         # geometric properties (unit force)
-        self.A_force = None  # length
-        self.Ae_force = None  # effective length
+        self.x_centroid_force = None
+        self.y_centroid_force = None
+        self.L_force = None
+        self.Le_force = None
         self.Ix_force = None
         self.Iy_force = None
-        self.Ixy_force = None
         self.Iz_force = None
+        self.Ixy_force = None
+        self.theta_p_force = None
         self.Sx1_force = None
         self.Sx2_force = None
         self.Sy1_force = None
         self.Sy2_force = None
         
-        # dictionary storing discretization of weld group
+        # dictionary storing analysis data
         self.dict_welds = {"x_centroid":[],
                            "y_centroid":[],
                            "x_start":[],
@@ -72,10 +73,53 @@ class WeldGroup:
                            "thickness":[],
                            "length":[],
                            "area":[],
+                           
+                           "length_effective":[],
+                           "vx_direct": [],
+                           "vx_torsion": [],
+                           "vy_direct": [],
+                           "vy_torsion": [],
+                           "vz_direct": [],
+                           "vz_Mx": [],
+                           "vz_My": [],
+                           "vx_total": [],
+                           "vy_total": [],
+                           "vz_total": [],
+                           "v_resultant": [],
+                           
+                           "Fx":[],
+                           "Fy":[],
+                           "Fz":[],
+                           "Mxi":[],
+                           "Myi":[],
+                           "Mzi":[],
+                           
+                           "tauX_direct":[],
+                           "tauX_torsion":[],
+                           "tauY_direct":[],
+                           "tauY_torsion":[],
+                           "tauZ_direct":[],
+                           "tauZ_Mx":[],
+                           "tauZ_My":[],
+                           "tauX_total": [],
+                           "tauY_total": [],
+                           "tauZ_total": [],
+                           "tau_x": [],
+                           "tau_y": [],
+                           "tau_z": [],
+                           "sigma_transverse": [],
+                           "tau_parallel": [],
+                           "tau_transverse": [],
+                           "von_mises_PJP": [],
+                           "von_mises_fillet": []
                            }
         
-        # master result table
-        self.df_welds = None
+        # von-mises stress criterion
+        self.sigma_v_PJP = None
+        self.sigma_v_fillet = None
+        
+        # master result dataframe curated for return to user
+        self.df_results = None
     
     
     def add_rectangle(self, xo, yo, width, height, xsegments, ysegments, thickness=None):
@@ -148,8 +192,8 @@ class WeldGroup:
         
         # if None is ever passed into the thickness argument, activate flag to report result in force/length
         if thickness == None:
-            self.solution_mode = "force"
-            thickness = 1.0
+            self.output_mode = "force"
+            thickness = 1.0  # set thickness to unity
         
         # add to dictionary storing discretization
         self.dict_welds["x_centroid"] = self.dict_welds["x_centroid"] + list(x_center)
@@ -178,6 +222,11 @@ class WeldGroup:
         Returns:
             df_results          dataframe:: result table where each row represents a single weld fiber
         """
+        print("Starting analysis...")
+        
+        if self.output_mode == "force":
+            print("Thickness information is not provided. Results will be displayed in force/area.")
+            
         # store applied loading
         self.Vx = Vx
         self.Vy = Vy
@@ -193,64 +242,165 @@ class WeldGroup:
         if Vx==0 and Vy==0 and Mx==0 and My==0 and torsion==0 and tension==0:
             raise RuntimeError("ERROR: No loading applied to weld group")
         
+        
         # WARNING: if thickness information is missing
-        thickness_list = [x for x in self.dict_welds["thickness"] if x!=None]
-        if len(thickness_list) !=0:
-            print("WARNING: some thicknesses are not specified. Results will be displayed as force/length.")
+        thickness_list = [x for x in self.dict_welds["thickness"] if x==None]
+        if len(thickness_list) != 0:
+            print("WARNING: some thicknesses are undefined. Results will be displayed as force/length.")
+            
             
         # WARNING: weld group not defined with respect to principal axis
         if abs(self.theta_p) > 1:  #deg
             print("WARNING: Weld group should be rotated to its principal orientation.")
             print("WARNING: Please rotate by {self.theta_p:.2f} degrees by calling the .rotate() method before solving.")
-    
         
+        
+        for i in range(len(self.dict_welds["length_effective"])):
+            ################# FORCE PER UNIT LENGTH ########################
+            if i==0:
+                print("\t Calculating demand in terms of unit force")
+            Li = self.dict_welds["length"][i]
+            dx = self.dict_welds["x_centroid"][i] - self.x_centroid
+            dy = self.dict_welds["y_centroid"][i] - self.y_centroid
+            length_factor = self.dict_welds["length_effective"][i] / self.dict_welds["length"][i]
+            
+            vx_direct = - Vx / self.Le_force * length_factor
+            vx_torsion = torsion * dy / self.Iz_force * length_factor
+            vy_direct = - Vy / self.Le_force * length_factor
+            vy_torsion = - torsion * dx / self.Iz_force * length_factor
+            vz_direct = - tension / self.Le_force * length_factor
+            vz_Mx = -Mx * dy / self.Ix_force * length_factor
+            vz_My = My * dx / self.Iy_force * length_factor
+            vx_total = vx_direct + vx_torsion
+            vy_total = vy_direct + vy_torsion
+            vz_total = vz_direct + vz_Mx + vz_My
+            v_resultant = math.sqrt(vx_total**2 + vy_total**2 + vz_total**2)
+            
+            Fx = vx_total * Li
+            Fy = vy_total * Li
+            Fz = vz_total * Li
+            Mxi = Fz * dy
+            Myi = -Fz * dx
+            Mzi = - Fx * dy + Fy * dx
+            
+            self.dict_welds["vx_direct"].append(vx_direct)
+            self.dict_welds["vx_torsion"].append(vx_torsion)
+            self.dict_welds["vy_direct"].append(vy_direct)
+            self.dict_welds["vy_torsion"].append(vy_torsion)
+            self.dict_welds["vz_direct"].append(vz_direct)
+            self.dict_welds["vz_Mx"].append(vz_Mx)
+            self.dict_welds["vz_My"].append(vz_My)
+            self.dict_welds["vx_total"].append(vx_total)
+            self.dict_welds["vy_total"].append(vy_total)
+            self.dict_welds["vz_total"].append(vz_total)
+            self.dict_welds["v_resultant"].append(v_resultant)
+            self.dict_welds["Fx"].append(Fx)
+            self.dict_welds["Fy"].append(Fy)
+            self.dict_welds["Fz"].append(Fz)
+            self.dict_welds["Mxi"].append(Mxi)
+            self.dict_welds["Myi"].append(Myi)
+            self.dict_welds["Mzi"].append(Mzi)
+        
+        
+            ################# STRESS IF APPLICABLE ########################
+            if self.output_mode=="stress":
+                if i == 0:
+                    print("\t Calculating demand in terms of stress")
+                vx_direct = - Vx / self.A
+                vx_torsion = torsion * dy / self.Iz
+                vy_direct = - Vy / self.A
+                vy_torsion = - torsion * dx / self.Iz
+                vz_direct = - tension / self.A
+                vz_Mx = -Mx * dy / self.Ix
+                vz_My = My * dx / self.Iy
+                vx_total = vx_direct + vx_torsion
+                vy_total = vy_direct + vy_torsion
+                vz_total = vz_direct + vz_Mx + vz_My
+            else:
+                vx_direct = "NA"
+                vx_torsion = "NA"
+                vy_direct = "NA"
+                vy_torsion = "NA"
+                vz_direct = "NA"
+                vz_Mx = "NA"
+                vz_My = "NA"
+                vx_total = "NA"
+                vy_total = "NA"
+                vz_total = "NA"
+            
+            self.dict_welds["tauX_direct"].append(vx_direct)
+            self.dict_welds["tauX_torsion"].append(vx_torsion)
+            self.dict_welds["tauY_direct"].append(vy_direct)
+            self.dict_welds["tauY_torsion"].append(vy_torsion)
+            self.dict_welds["tauZ_direct"].append(vz_direct)
+            self.dict_welds["tauZ_Mx"].append(vz_Mx)
+            self.dict_welds["tauZ_My"].append(vz_My)
+            self.dict_welds["tauX_total"].append(vx_total)
+            self.dict_welds["tauY_total"].append(vy_total)
+            self.dict_welds["tauZ_total"].append(vz_total)
+        
+        
+        # check equilibrium
+        self.check_equilibrium()
+        
+        # convert results to dataframe for output
+        self.df_results = pd.DataFrame(self.dict_welds)
+        
+        print("Done. Thank you for using EZweld!")
+        return self.df_results
+        
+    
     def update_geometric_properties(self):
         """
         calculate geometric properties of weld group.
         """
-        ################ STRESS CONVENTION #################      
-        # CALCULATED WITH t = 1.0 if thickness is not provided
         # calculate widths and depths
         all_x = self.dict_welds["x_centroid"] + self.dict_welds["x_start"] + self.dict_welds["x_end"]
         all_y = self.dict_welds["y_centroid"] + self.dict_welds["y_start"] + self.dict_welds["y_end"]
         
-        # calculate centroid using moment of area equation
-        xA = sum([x*A for x,A in zip(self.dict_welds["x_centroid"],self.dict_welds["area"])])
-        yA = sum([y*A for y,A in zip(self.dict_welds["y_centroid"],self.dict_welds["area"])])
-        self.A = sum(self.dict_welds["area"])
-        self.x_centroid = xA / self.A
-        self.y_centroid = yA / self.A
-        
-        # moment of inertia
-        self.Ix = sum([ A * (y - self.y_centroid)**2 for y,A in zip(self.dict_welds["y_centroid"],self.dict_welds["area"]) ])
-        self.Iy = sum([ A * (x - self.x_centroid)**2 for x,A in zip(self.dict_welds["x_centroid"],self.dict_welds["area"]) ])
-        self.Ixy = sum([ A * (y - self.y_centroid) * (x - self.x_centroid) for x,y,A in zip(self.dict_welds["x_centroid"],self.dict_welds["y_centroid"],self.dict_welds["area"]) ])
-        self.Iz = self.Ix + self.Iy
-        
-        # section modulus
-        self.Sx1 = self.Ix / abs(max(all_y) - self.y_centroid)
-        self.Sx2 = self.Ix / abs(min(all_y) - self.y_centroid)
-        self.Sy1 = self.Iy / abs(max(all_x) - self.x_centroid)
-        self.Sy2 = self.Iy / abs(min(all_x) - self.x_centroid)
-        
-        # principal axes via Mohr's circle
-        if self.Ix==self.Iy:
-            self.theta_p = 0
-        else:
-            self.theta_p = (  math.atan((self.Ixy)/((self.Ix-self.Iy)/2)) / 2) * 180 / math.pi
+        ################ STRESS CONVENTION IF APPLICABLE #################
+        if self.output_mode == "stress":
+            # centroid
+            xA = sum([x*A for x,A in zip(self.dict_welds["x_centroid"],self.dict_welds["area"])])
+            yA = sum([y*A for y,A in zip(self.dict_welds["y_centroid"],self.dict_welds["area"])])
+            self.A = sum(self.dict_welds["area"])
+            self.x_centroid = xA / self.A
+            self.y_centroid = yA / self.A
+            
+            # moment of inertia
+            self.Ix = sum([ A * (y - self.y_centroid)**2 for y,A in zip(self.dict_welds["y_centroid"],self.dict_welds["area"]) ])
+            self.Iy = sum([ A * (x - self.x_centroid)**2 for x,A in zip(self.dict_welds["x_centroid"],self.dict_welds["area"]) ])
+            self.Ixy = sum([ A * (y - self.y_centroid) * (x - self.x_centroid) for x,y,A in zip(self.dict_welds["x_centroid"],self.dict_welds["y_centroid"],self.dict_welds["area"]) ])
+            self.Iz = self.Ix + self.Iy
+            
+            # section modulus
+            self.Sx1 = self.Ix / abs(max(all_y) - self.y_centroid)
+            self.Sx2 = self.Ix / abs(min(all_y) - self.y_centroid)
+            self.Sy1 = self.Iy / abs(max(all_x) - self.x_centroid)
+            self.Sy2 = self.Iy / abs(min(all_x) - self.x_centroid)
+            
+            # principal axes via Mohr's circle
+            if self.Ix==self.Iy:
+                self.theta_p = 0
+            else:
+                self.theta_p = (  math.atan((self.Ixy)/((self.Ix-self.Iy)/2)) / 2) * 180 / math.pi
         
         
         ################ UNIT FORCE CONVENTION #################
-        # modify length to account for variable thickness if applicable
-        if self.solution_mode == "stress":
-            t_min = min(self.dict_welds["thickness"])
-            modified_length = [t/t_min * L for t,L in zip(self.dict_welds["thickness"], self.dict_welds["length"])]
-        else:
-            modified_length = self.dict_welds["length"]
+        # modify length to account for variable thickness
+        t_min = min(self.dict_welds["thickness"])
+        modified_length = [t/t_min * L for t,L in zip(self.dict_welds["thickness"], self.dict_welds["length"])]
+        self.dict_welds["length_effective"] = modified_length
         
-        # lengths
-        self.A_force = sum(self.dict_welds["length"])
-        self.Ae_force = sum(modified_length)
+        # total lengths
+        self.L_force = sum(self.dict_welds["length"])
+        self.Le_force = sum(modified_length)
+        
+        # centroid
+        xL = sum([x*L for x,L in zip(self.dict_welds["x_centroid"],modified_length)])
+        yL = sum([y*L for y,L in zip(self.dict_welds["y_centroid"],modified_length)])
+        self.x_centroid_force = xL / self.Le_force
+        self.y_centroid_force = yL / self.Le_force
         
         # moment of inertia
         self.Ix_force = sum([ L * (y - self.y_centroid)**2 for y,L in zip(self.dict_welds["y_centroid"],modified_length) ])
@@ -264,19 +414,13 @@ class WeldGroup:
         self.Sy1_force = self.Iy_force / abs(max(all_x) - self.x_centroid)
         self.Sy2_force = self.Iy_force / abs(min(all_x) - self.x_centroid)
         
-        
-        # xA = sum([x*A for x,A in zip(self.dict_welds["x_centroid"],modified_length)])
-        # yA = sum([y*A for y,A in zip(self.dict_welds["y_centroid"],modified_length)])
-        # A = sum(modified_length)
-        # self.x_centroid_force = xA / A
-        # self.y_centroid_force = yA / A
-        
+        # principal axis
         if self.Ix_force==self.Iy_force:
             self.theta_p_force = 0
         else:
             self.theta_p_force = (  math.atan((self.Ixy_force)/((self.Ix_force-self.Iy_force)/2)) / 2) * 180 / math.pi
         
-        
+         
     def rotate(self, angle):
         """rotate all meshes by a user-specified angle in DEGREES counter-clockwise"""
         # rotation matrix
@@ -330,12 +474,15 @@ class WeldGroup:
         # update geometric property
         self.update_geometric_properties()
         
-        # normalize thickness
-        t_min = min(self.dict_welds["thickness"])
-        line_thicknesses = [t/t_min * DEFAULT_THICKNESS for t in self.dict_welds["thickness"]]
+        # normalize thickness for display
+        if self.output_mode == "stress":
+            t_min = min(self.dict_welds["thickness"])
+            line_thicknesses = [t/t_min * DEFAULT_THICKNESS for t in self.dict_welds["thickness"]]
+        else:
+            line_thicknesses = [1 * DEFAULT_THICKNESS for t in self.dict_welds["thickness"]]
         
         # initialize figure
-        fig, axs = plt.subplots(1,2, figsize=(11,8.5), gridspec_kw={"width_ratios":[1.5,3]})
+        fig, axs = plt.subplots(1,2, figsize=(11,8.5), gridspec_kw={"width_ratios":[2,3]})
         
         # plot weld mesh with polygon patches
         for i in range(len(self.dict_welds["x_start"])):
@@ -369,54 +516,57 @@ class WeldGroup:
         
         
         # annotation for weld properties
+        xo = 0.12
         yo = 0.97
         dy = 0.045
-        axs[0].annotate("Stress Convention", 
-                        (0.05,yo), fontweight="bold",
+        axs[0].annotate("Stress Calculations", 
+                        (xo-0.03,yo), fontweight="bold",
                         xycoords='axes fraction', fontsize=12, va="top", ha="left")
         
-        if self.solution_mode == "force":
+        if self.output_mode == "force":
             axs[0].annotate("Not applicable. Thickness not provided.", 
-                            (0.08,yo-dy*1), xycoords='axes fraction', fontsize=12, va="top", ha="left")
+                            (xo,yo-dy*1), xycoords='axes fraction', fontsize=12, va="top", ha="left")
         else:
             axs[0].annotate(r"$x_{{cg}} = {:.2f} \quad {}$".format(self.x_centroid, unit), 
-                            (0.08,yo-dy*1), xycoords='axes fraction', fontsize=12, va="top", ha="left")
+                            (xo,yo-dy*1), xycoords='axes fraction', fontsize=12, va="top", ha="left")
             axs[0].annotate(r"$y_{{cg}} = {:.2f} \quad {}$".format(self.y_centroid, unit), 
-                            (0.08,yo-dy*2), xycoords='axes fraction', fontsize=12, va="top", ha="left")
+                            (xo,yo-dy*2), xycoords='axes fraction', fontsize=12, va="top", ha="left")
             axs[0].annotate(r"$area = {:.2f} \quad {}^2$".format(self.A, unit), 
-                            (0.08,yo-dy*3), xycoords='axes fraction', fontsize=12, va="top", ha="left")
+                            (xo,yo-dy*3), xycoords='axes fraction', fontsize=12, va="top", ha="left")
             axs[0].annotate(r"$I_x = {:.2f} \quad {}^4$".format(self.Ix, unit), 
-                            (0.08,yo-dy*4), xycoords='axes fraction', fontsize=12, va="top", ha="left")
+                            (xo,yo-dy*4), xycoords='axes fraction', fontsize=12, va="top", ha="left")
             axs[0].annotate(r"$I_y = {:.2f} \quad {}^4$".format(self.Iy, unit), 
-                            (0.08,yo-dy*5), xycoords='axes fraction', fontsize=12, va="top", ha="left")
+                            (xo,yo-dy*5), xycoords='axes fraction', fontsize=12, va="top", ha="left")
             axs[0].annotate(r"$I_z = {:.2f} \quad {}^4$".format(self.Iz, unit), 
-                            (0.08,yo-dy*6), xycoords='axes fraction', fontsize=12, va="top", ha="left")
+                            (xo,yo-dy*6), xycoords='axes fraction', fontsize=12, va="top", ha="left")
             axs[0].annotate(r"$I_{{xy}} = {:.2f} \quad {}^4$".format(self.Ixy, unit), 
-                            (0.08,yo-dy*7), xycoords='axes fraction', fontsize=12, va="top", ha="left")
+                            (xo,yo-dy*7), xycoords='axes fraction', fontsize=12, va="top", ha="left")
             axs[0].annotate(r"$\theta_{{p}} = {:.2f} \quad deg$".format(self.theta_p), 
-                            (0.08,yo-dy*8), xycoords='axes fraction', fontsize=12, va="top", ha="left")
+                            (xo,yo-dy*8), xycoords='axes fraction', fontsize=12, va="top", ha="left")
     
         yo = 0.50
         dy = 0.045
-        axs[0].annotate("Unit Force Convention", 
-                        (0.05,yo), fontweight="bold",xycoords='axes fraction', fontsize=12, va="top", ha="left")
-        axs[0].annotate(r"$x_{{cg}} = {:.2f} \quad {}$".format(self.x_centroid, unit), 
-                        (0.08,yo-dy*1), xycoords='axes fraction', fontsize=12, va="top", ha="left")
-        axs[0].annotate(r"$y_{{cg}} = {:.2f} \quad {}$".format(self.y_centroid, unit), 
-                        (0.08,yo-dy*2), xycoords='axes fraction', fontsize=12, va="top", ha="left")
-        axs[0].annotate(r"$L = {:.2f} \quad {}$".format(self.A_force, unit), 
-                        (0.08,yo-dy*3), xycoords='axes fraction', fontsize=12, va="top", ha="left")
-        axs[0].annotate(r"$L_{{effective}} = {:.2f} \quad {}$".format(self.Ae_force, unit), 
-                        (0.08,yo-dy*4), xycoords='axes fraction', fontsize=12, va="top", ha="left")
+        axs[0].annotate("Unit Force Calculations", 
+                        (xo-0.03,yo), fontweight="bold",xycoords='axes fraction', fontsize=12, va="top", ha="left")
+        axs[0].annotate(r"$x_{{cg}} = {:.2f} \quad {}$".format(self.x_centroid_force, unit), 
+                        (xo,yo-dy*1), xycoords='axes fraction', fontsize=12, va="top", ha="left")
+        axs[0].annotate(r"$y_{{cg}} = {:.2f} \quad {}$".format(self.y_centroid_force, unit), 
+                        (xo,yo-dy*2), xycoords='axes fraction', fontsize=12, va="top", ha="left")
+        axs[0].annotate(r"$L = {:.2f} \quad {}$".format(self.L_force, unit), 
+                        (xo,yo-dy*3), xycoords='axes fraction', fontsize=12, va="top", ha="left")
+        axs[0].annotate(r"$L_{{effective}} = {:.2f} \quad {}$".format(self.Le_force, unit), 
+                        (xo,yo-dy*4), xycoords='axes fraction', fontsize=12, va="top", ha="left")
         axs[0].annotate(r"$I_x = {:.2f} \quad {}^3$".format(self.Ix_force, unit), 
-                        (0.08,yo-dy*5), xycoords='axes fraction', fontsize=12, va="top", ha="left")
+                        (xo,yo-dy*5), xycoords='axes fraction', fontsize=12, va="top", ha="left")
         axs[0].annotate(r"$I_y = {:.2f} \quad {}^3$".format(self.Iy_force, unit), 
-                        (0.08,yo-dy*6), xycoords='axes fraction', fontsize=12, va="top", ha="left")
+                        (xo,yo-dy*6), xycoords='axes fraction', fontsize=12, va="top", ha="left")
         axs[0].annotate(r"$I_z = {:.2f} \quad {}^3$".format(self.Iz_force, unit), 
-                        (0.08,yo-dy*7), xycoords='axes fraction', fontsize=12, va="top", ha="left")
+                        (xo,yo-dy*7), xycoords='axes fraction', fontsize=12, va="top", ha="left")
         axs[0].annotate(r"$I_{{xy}} = {:.2f} \quad {}^3$".format(self.Ixy_force, unit), 
-                        (0.08,yo-dy*8), xycoords='axes fraction', fontsize=12, va="top", ha="left")
-        
+                        (xo,yo-dy*8), xycoords='axes fraction', fontsize=12, va="top", ha="left")
+        axs[0].annotate(r"$\theta_{{p}} = {:.2f} \quad deg$".format(self.theta_p_force), 
+                        (xo,yo-dy*9), xycoords='axes fraction', fontsize=12, va="top", ha="left")
+
         
         # styling
         axs[1].set_aspect('equal', 'datalim')
@@ -425,6 +575,44 @@ class WeldGroup:
         axs[0].set_xticks([])
         axs[0].set_yticks([])
         plt.tight_layout()
+        
+        
+    def check_equilibrium(self):
+        """
+        Check if results are sensible by checking equilibrium.
+        """
+        TOL = 0.1
+        print("\t Checking equilibrium:")
+        
+        sumFx = sum(self.dict_welds["Fx"])
+        sumFy = sum(self.dict_welds["Fy"])
+        sumFz = sum(self.dict_welds["Fz"])
+        sumMx = sum(self.dict_welds["Mxi"])
+        sumMy = sum(self.dict_welds["Myi"])
+        sumMz = sum(self.dict_welds["Mzi"])
+        
+        residual_Fx = sumFx + self.Vx
+        residual_Fy = sumFy + self.Vy
+        residual_Fz = sumFz + self.tension
+        residual_Mx = sumMx + self.Mx
+        residual_My = sumMy + self.My
+        residual_Mz = sumMz + self.torsion
+        
+        flag_Fx = "OK" if abs(residual_Fx) < TOL else "WARNING: NOT OKAY. EQUILIBRIUM NOT SATISFIED"
+        flag_Fy = "OK" if abs(residual_Fy) < TOL else "WARNING: NOT OKAY. EQUILIBRIUM NOT SATISFIED"
+        flag_Fz = "OK" if abs(residual_Fz) < TOL else "WARNING: NOT OKAY. EQUILIBRIUM NOT SATISFIED"
+        flag_Mx = "OK" if abs(residual_Mx) < TOL else "WARNING: NOT OKAY. EQUILIBRIUM NOT SATISFIED"
+        flag_My = "OK" if abs(residual_My) < TOL else "WARNING: NOT OKAY. EQUILIBRIUM NOT SATISFIED"
+        flag_Mz = "OK" if abs(residual_Mz) < TOL else "WARNING: NOT OKAY. EQUILIBRIUM NOT SATISFIED"
+        
+        print(f"\t\t Fx_applied={self.Vx:.2f},\t  sumFx={sumFx:.2f},\t residual = {residual_Fx:.2f},\t {flag_Fx}")
+        print(f"\t\t Fy_applied={self.Vy:.2f},\t  sumFy={sumFy:.2f},\t residual = {residual_Fy:.2f},\t {flag_Fy}")
+        print(f"\t\t Fz_applied={self.tension:.2f},\t  sumFz={sumFz:.2f},\t residual = {residual_Fz:.2f},\t {flag_Fz}")
+        
+        print(f"\t\t Mx_applied={self.Mx:.2f},\t  sumMx={sumMx:.2f},\t residual = {residual_Mx:.2f},\t {flag_Mx}")
+        print(f"\t\t My_applied={self.My:.2f},\t  sumMy={sumMy:.2f},\t residual = {residual_My:.2f},\t {flag_My}")
+        print(f"\t\t Mz_applied={self.torsion:.2f},\t  sumMz={sumMz:.2f},\t residual = {residual_Mz:.2f},\t {flag_Mz}")
+        
         
         
     def plot_results(self):
