@@ -337,7 +337,7 @@ $$v_{resultant} = \sqrt{v_{x,total}^2 + v_{y,total}^2 + v_{z,total}^2} \leq \phi
 
 **Resultant Stress - Von-Mises Yield Criterion**
 
-The assumption of pure shear, and vector addition without stress transformation is convenient but not accurate (but then again neither is the elastic method). For example, complete-joint-penetration (CJP) welds and partial-joint-penetration (PJP) welds do have a normal stress component. Writing out the full Von-Mises yield criterion below, notice how the $\sigma$ term is not multiplied by 3, and thus $\sqrt{3}$ does not factor out cleanly. 
+The assumption of pure shear, and vector addition without stress transformation is convenient but not entirely accurate (but then again neither is the elastic method). For example, complete-joint-penetration (CJP) welds and partial-joint-penetration (PJP) welds do have a normal stress component. Writing out the full Von-Mises yield criterion below, notice how the $\sigma$ term is not multiplied by 3, and thus $\sqrt{3}$ does not factor out cleanly. 
 
 $$\sigma_v = \sqrt{\frac{1}{2}[(\sigma_{xx}-\sigma_{yy})^2+(\sigma_{yy}-\sigma_{zz})^2+(\sigma_{zz}-\sigma_{xx})^2] + 3[\tau_{xy}^2+\tau_{yz}^2+\tau_{xz}^2]} \leq F_{EXX}$$
 
@@ -345,7 +345,7 @@ $$\sigma_v = \sqrt{\sigma_{zz}^2 + 3[\tau_{xy}^2+\tau_{yz}^2]}$$
 
 
 
-In the case PJPs, the Von-Mises stress can be expressed as a function of global stress terms without any coordinate transformation. The global vertical axis (Z) always corresponds with the normal stress vector, and magnitude of the in-plane resultant ($\tau_{xy}^2 + \tau_{yz}^2$) is always the same regardless coordinate system. Therefore, the Von-Mises criterion for PJPs is expressed as:
+In the case PJPs, the Von-Mises stress can be expressed as a function of global stress terms without any coordinate transformation. The global vertical axis (Z) always corresponds with the normal stress vector, and magnitude of the in-plane resultant ($\tau_{xy}^2 + \tau_{yz}^2$) is always the same regardless of the coordinate system in which it is expressed. Therefore, the Von-Mises criterion for PJPs is calculated as:
 
 $$\sigma_v = \sqrt{\tau_{z, total}^2 + 3[\tau_{x, total}^2+\tau_{y, total}^2]} \leq \phi F_{EXX}$$
 
@@ -354,7 +354,7 @@ $$\sigma_v = \sqrt{\tau_{z, total}^2 + 3[\tau_{x, total}^2+\tau_{y, total}^2]} \
 In the case of fillet welds, we must first established a local coordinate system to map global stress to a local stress. 
 
 ```math
-\{ \tau_{X},  \tau_{Y} , \tau_{Z} \} \rightarrow \{ \sigma_{\perp},  \tau_{\parallel} , \tau_{\perp} \}
+\{ \tau_{X},  \tau_{Y} , \tau_{Z} \} \rightarrow { \tau_{x'},  \tau_{y'} , \tau_{z'} \} \rightarrow \{ \sigma_{\perp},  \tau_{\parallel} , \tau_{\perp} \}
 ```
 
 
@@ -366,7 +366,7 @@ In the case of fillet welds, we must first established a local coordinate system
 </div>
 
 
-A fillet weld actually has three failure planes, but we typically assume failure to occur along the inclined throat of the weld. Therefore, the local coordinate system must also be rotated 45 degrees. Refer to this [Engineering Stack Exchange post](https://engineering.stackexchange.com/questions/37181/why-is-fillet-weld-assumed-to-be-in-a-state-of-pure-shear-stress) for more info. Let's first establish the necessary transformation matrix.
+A fillet weld actually has three failure planes. It is typical to assume failure along the inclined throat of the weld. Therefore, the local coordinate system must also be rotated 45 degrees. Refer to this [Engineering Stack Exchange post](https://engineering.stackexchange.com/questions/37181/why-is-fillet-weld-assumed-to-be-in-a-state-of-pure-shear-stress) for more info. Let's first establish the requisite composite rotation matrix.
 
 First, the longitudinal basis vector **(x')** is established by the start and end point of the weld line defined by the user.
 
@@ -377,7 +377,7 @@ u_{start}=\{x_i,y_i,0\}, \:  u_{end}=\{x_i,y_i,0\}
 $$e_x =\frac{u_{end} - u_{start}}{||u_{end} - u_{start}||} $$
 
 
-Then we let one of the transverse basis vector **(z')** be exactly aligned with Z, which points upward.
+Then we let the local basis vector **(z')** be exactly aligned with Z, which points upward.
 
 ```math
 e_z=\{0,0,1 \}
@@ -387,32 +387,44 @@ The last basis **(y')** is determined via a cross product. Notice how we crossed
 
 $$e_y = \frac{e_z \times e_x}{||e_z \times e_x||} $$
 
-Now we can define a 3x3 geometric transformation matrix.
+The 3x3 geometric transformation matrix is defined by the x, y, and z basis vectors as the first, second, and third column, respectively.
 
 $$ [T] = [e_x, e_y, e_z]$$
 
-In addition, we want to apply a negative 45 degree rotation about the x-axis:
+In addition, we want to apply a 45 degree rotation about the local x' axis:
+
 
 $$
-[T_{-45}] = \begin{bmatrix}
+[T_{45}] = \begin{bmatrix}
 1 & 0 & 0\\ 
-0 & cos(-45) & -sin(-45)\\ 
-0 & sin(-45) & cos(-45)\end{bmatrix}
+0 & cos(45) & -sin(45)\\ 
+0 & sin(45) & cos(45)\end{bmatrix}
 $$
 
-Rotating a stress vector is inconvenient because the associated dA must also be rotated, but notice that we are not looking at an infinitesimally small cube yet, evaluation of the fillet geometry is still a macro level exercise. For a unit strip of fillet weld, apply two successive transformations to get the unit force expressed in the local coordinate system.
+Apply the first transformation $[T]$ to obtain unit force expressed in x', y', and z'.
 
 ```math
-\{ v_{\perp},  v_{\parallel} , v_{\perp}\} = [T_{45}][T] \{ v_{x},  v_{y} , v_{z} \}
+\{ v_{x'},  v_{y'} , v_{z'} \} = [T] \{ v_{X},  v_{Y} , v_{Z} \}
 ```
 
-Then divide by the thickness to get stress:
+
+Apply both $[T]$ and $[T_{45}]$ to get unit force expressed about the inclined local axis. Notice how we post-multiply $T_{45}$ because we want rotations to apply "intrinsically" (reading left to right). In other words, we want the 45 degree rotation about the local x' axis to occur after the first transformation.
+
+```math
+\{ v_{\parallel},  v_{\perp} , n_{\perp}\} = [T][T_{45}] \{ v_{X},  v_{Y} , v_{Z} \}
+```
+
+Now we can calculate Von-Mises stress for fillet welds on this inclined plane:
+
+$$\sigma_v = \sqrt{\sigma_{\perp}^2 + 3[\tau_{\parallel}^2+\tau_{\perp}^2]} \leq \phi F_{EXX}$$
+
+Two important caveats about the derivation above:
+
+* Rotating a stress vector is more complex because the associated dA must also be rotated, but notice that we are not looking at an infinitesimally small cube yet, evaluation of the fillet geometry is still a macro level exercise. In the equations above, work with force first, then divide by the thickness to get stress:
 
 $$\tau = v/t_{throat}$$
 
-Now that we are on this inclined plane, we can apply the stress transformation equations, but that's unnecessary because the Von-Mises criterion for fillet can already to calculated.
-
-$$\sigma_v = \sqrt{\sigma_{\perp}^2 + 3[\tau_{\parallel}^2+\tau_{\perp}^2]} \leq \phi F_{EXX}$$
+* It is impossible to know whether we should rotate -45 or +45 degrees without knowing the orientation of the fillet weld first. If we only rotate by a +45 degrees, it is ambiguous whether z' or y' becomes $\sigma_{\perp}$. By default, EZweld takes the conservative approach of multiplying everything within the square root by 3. You can override this behavior by explicitly specifying a rotation angle when calling the .solve() method.
 
 
 

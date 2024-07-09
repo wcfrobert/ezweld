@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import math
+import time
 
 
 class WeldGroup:
@@ -73,8 +74,8 @@ class WeldGroup:
                            "thickness":[],
                            "length":[],
                            "area":[],
-                           
                            "length_effective":[],
+                           
                            "vx_direct": [],
                            "vx_torsion": [],
                            "vy_direct": [],
@@ -104,6 +105,7 @@ class WeldGroup:
                            "tauX_total": [],
                            "tauY_total": [],
                            "tauZ_total": [],
+                           
                            "tau_x": [],
                            "tau_y": [],
                            "tau_z": [],
@@ -113,10 +115,6 @@ class WeldGroup:
                            "von_mises_PJP": [],
                            "von_mises_fillet": []
                            }
-        
-        # von-mises stress criterion
-        self.sigma_v_PJP = None
-        self.sigma_v_fillet = None
         
         # master result dataframe curated for return to user
         self.df_results = None
@@ -222,6 +220,7 @@ class WeldGroup:
         Returns:
             df_results          dataframe:: result table where each row represents a single weld fiber
         """
+        time_start = time.time()
         print("Starting analysis...")
         
         if self.output_mode == "force":
@@ -257,13 +256,12 @@ class WeldGroup:
         
         for i in range(len(self.dict_welds["length_effective"])):
             ################# FORCE PER UNIT LENGTH ########################
-            if i==0:
-                print("\t Calculating demand in terms of unit force")
             Li = self.dict_welds["length"][i]
             dx = self.dict_welds["x_centroid"][i] - self.x_centroid
             dy = self.dict_welds["y_centroid"][i] - self.y_centroid
             length_factor = self.dict_welds["length_effective"][i] / self.dict_welds["length"][i]
             
+            # k/in
             vx_direct = - Vx / self.Le_force * length_factor
             vx_torsion = torsion * dy / self.Iz_force * length_factor
             vy_direct = - Vy / self.Le_force * length_factor
@@ -276,6 +274,7 @@ class WeldGroup:
             vz_total = vz_direct + vz_Mx + vz_My
             v_resultant = math.sqrt(vx_total**2 + vy_total**2 + vz_total**2)
             
+            # kips. The actual weld patch may have length less or greater than 1.0
             Fx = vx_total * Li
             Fy = vy_total * Li
             Fz = vz_total * Li
@@ -304,40 +303,76 @@ class WeldGroup:
         
             ################# STRESS IF APPLICABLE ########################
             if self.output_mode=="stress":
-                if i == 0:
-                    print("\t Calculating demand in terms of stress")
-                vx_direct = - Vx / self.A
-                vx_torsion = torsion * dy / self.Iz
-                vy_direct = - Vy / self.A
-                vy_torsion = - torsion * dx / self.Iz
-                vz_direct = - tension / self.A
-                vz_Mx = -Mx * dy / self.Ix
-                vz_My = My * dx / self.Iy
-                vx_total = vx_direct + vx_torsion
-                vy_total = vy_direct + vy_torsion
-                vz_total = vz_direct + vz_Mx + vz_My
+                tauX_direct = - Vx / self.A
+                tauX_torsion = torsion * dy / self.Iz
+                tauY_direct = - Vy / self.A
+                tauY_torsion = - torsion * dx / self.Iz
+                tauZ_direct = - tension / self.A
+                tauZ_Mx = -Mx * dy / self.Ix
+                tauZ_My = My * dx / self.Iy
+                tauX_total = tauX_direct + tauX_torsion
+                tauY_total = tauY_direct + tauY_torsion
+                tauZ_total = tauZ_direct + tauZ_Mx + tauZ_My
+                
+                # calculate geometric transformation matrices
+                start_pt = np.array([self.dict_welds["x_start"][i], self.dict_welds["x_end"][i], 0])
+                end_pt = np.array([self.dict_welds["y_start"][i], self.dict_welds["y_end"][i], 0])
+                x_basis = (end_pt - start_pt) / np.linalg.norm(end_pt - start_pt)
+                z_basis = np.array([0,0,1])
+                y_basis = np.cross(z_basis, x_basis) / np.linalg.norm(np.cross(z_basis, x_basis))
+                T = np.array([x_basis, y_basis, z_basis]).T
+                T_45 = np.array([[1,0,0],
+                                 [0,math.cos(0.785398), -math.sin(0.785398)],
+                                 [0,math.sin(0.785398), math.cos(0.785398)]])
+                
+                # local stresses
+                taux, tauy, tauz = T @ np.array([tauX_total,tauY_total,tauZ_total])
+                tau_parallel, tau_transverse, sigma_transverse = T @ T_45 @ np.array([tauX_total,tauY_total,tauZ_total])
+                
+                # von mises
+                von_mises_PJP = math.sqrt(tauZ_total**2 + 3*(tauX_total**2 + tauY_total**2))
+                von_mises_fillet = math.sqrt(sigma_transverse**2 + 3*(tau_transverse**2 + tau_parallel**2))
+                
             else:
-                vx_direct = "NA"
-                vx_torsion = "NA"
-                vy_direct = "NA"
-                vy_torsion = "NA"
-                vz_direct = "NA"
-                vz_Mx = "NA"
-                vz_My = "NA"
-                vx_total = "NA"
-                vy_total = "NA"
-                vz_total = "NA"
-            
-            self.dict_welds["tauX_direct"].append(vx_direct)
-            self.dict_welds["tauX_torsion"].append(vx_torsion)
-            self.dict_welds["tauY_direct"].append(vy_direct)
-            self.dict_welds["tauY_torsion"].append(vy_torsion)
-            self.dict_welds["tauZ_direct"].append(vz_direct)
-            self.dict_welds["tauZ_Mx"].append(vz_Mx)
-            self.dict_welds["tauZ_My"].append(vz_My)
-            self.dict_welds["tauX_total"].append(vx_total)
-            self.dict_welds["tauY_total"].append(vy_total)
-            self.dict_welds["tauZ_total"].append(vz_total)
+                tauX_direct = "NA"
+                tauX_torsion = "NA"
+                tauY_direct = "NA"
+                tauY_torsion = "NA"
+                tauZ_direct = "NA"
+                tauZ_Mx = "NA"
+                tauZ_My = "NA"
+                tauX_total = "NA"
+                tauY_total = "NA"
+                tauZ_total = "NA"
+                taux ="NA"
+                tauy ="NA" 
+                tauz ="NA" 
+                sigma_transverse = "NA"
+                tau_parallel = "NA"
+                tau_transverse = "NA"
+                von_mises_PJP = "NA"
+                von_mises_fillet = "NA"
+                
+                
+                
+            self.dict_welds["tauX_direct"].append(tauX_direct)
+            self.dict_welds["tauX_torsion"].append(tauX_torsion)
+            self.dict_welds["tauY_direct"].append(tauY_direct)
+            self.dict_welds["tauY_torsion"].append(tauY_torsion)
+            self.dict_welds["tauZ_direct"].append(tauZ_direct)
+            self.dict_welds["tauZ_Mx"].append(tauZ_Mx)
+            self.dict_welds["tauZ_My"].append(tauZ_My)
+            self.dict_welds["tauX_total"].append(tauX_total)
+            self.dict_welds["tauY_total"].append(tauY_total)
+            self.dict_welds["tauZ_total"].append(tauZ_total)
+            self.dict_welds["tau_x"].append(taux)
+            self.dict_welds["tau_y"].append(tauy)
+            self.dict_welds["tau_z"].append(tauz)
+            self.dict_welds["sigma_transverse"].append(sigma_transverse)
+            self.dict_welds["tau_parallel"].append(tau_parallel)
+            self.dict_welds["tau_transverse"].append(tau_transverse)
+            self.dict_welds["von_mises_PJP"].append(von_mises_PJP)
+            self.dict_welds["von_mises_fillet"].append(von_mises_fillet)
         
         
         # check equilibrium
@@ -346,7 +381,8 @@ class WeldGroup:
         # convert results to dataframe for output
         self.df_results = pd.DataFrame(self.dict_welds)
         
-        print("Done. Thank you for using EZweld!")
+        time_end = time.time()
+        print(f"Analysis completed. Elapsed time = {time_end-time_start:.2f} s. Thank you for using EZweld!")
         return self.df_results
         
     
@@ -582,7 +618,6 @@ class WeldGroup:
         Check if results are sensible by checking equilibrium.
         """
         TOL = 0.1
-        print("\t Checking equilibrium:")
         
         sumFx = sum(self.dict_welds["Fx"])
         sumFy = sum(self.dict_welds["Fy"])
@@ -605,14 +640,15 @@ class WeldGroup:
         flag_My = "OK" if abs(residual_My) < TOL else "WARNING: NOT OKAY. EQUILIBRIUM NOT SATISFIED"
         flag_Mz = "OK" if abs(residual_Mz) < TOL else "WARNING: NOT OKAY. EQUILIBRIUM NOT SATISFIED"
         
-        print(f"\t\t Fx_applied={self.Vx:.2f},\t  sumFx={sumFx:.2f},\t residual = {residual_Fx:.2f},\t {flag_Fx}")
-        print(f"\t\t Fy_applied={self.Vy:.2f},\t  sumFy={sumFy:.2f},\t residual = {residual_Fy:.2f},\t {flag_Fy}")
-        print(f"\t\t Fz_applied={self.tension:.2f},\t  sumFz={sumFz:.2f},\t residual = {residual_Fz:.2f},\t {flag_Fz}")
         
-        print(f"\t\t Mx_applied={self.Mx:.2f},\t  sumMx={sumMx:.2f},\t residual = {residual_Mx:.2f},\t {flag_Mx}")
-        print(f"\t\t My_applied={self.My:.2f},\t  sumMy={sumMy:.2f},\t residual = {residual_My:.2f},\t {flag_My}")
-        print(f"\t\t Mz_applied={self.torsion:.2f},\t  sumMz={sumMz:.2f},\t residual = {residual_Mz:.2f},\t {flag_Mz}")
-        
+        if flag_Fx !="OK" or flag_Fy !="OK" or flag_Fz !="OK" or flag_Mx !="OK" or flag_My !="OK" or flag_Mz !="OK":
+            print(f"\t\t Fx_applied={self.Vx:.2f},\t  sumFx={sumFx:.2f},\t residual = {residual_Fx:.2f},\t {flag_Fx}")
+            print(f"\t\t Fy_applied={self.Vy:.2f},\t  sumFy={sumFy:.2f},\t residual = {residual_Fy:.2f},\t {flag_Fy}")
+            print(f"\t\t Fz_applied={self.tension:.2f},\t  sumFz={sumFz:.2f},\t residual = {residual_Fz:.2f},\t {flag_Fz}")
+            print(f"\t\t Mx_applied={self.Mx:.2f},\t  sumMx={sumMx:.2f},\t residual = {residual_Mx:.2f},\t {flag_Mx}")
+            print(f"\t\t My_applied={self.My:.2f},\t  sumMy={sumMy:.2f},\t residual = {residual_My:.2f},\t {flag_My}")
+            print(f"\t\t Mz_applied={self.torsion:.2f},\t  sumMz={sumMz:.2f},\t residual = {residual_Mz:.2f},\t {flag_Mz}")
+            raise RuntimeError("Error: Equilibrium check failed.")
         
         
     def plot_results(self):
