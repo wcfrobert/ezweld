@@ -157,7 +157,7 @@ For example, here's the output from `help(ezweld.weldgroup.WeldGroup.add_line)`
 
 **Section Analogy**
 
-Welds transfer forces between two connected members. At the plane of connection, we can think of the weld as the member itself; having its own geometric properties. With this assumption in mind, finding the stress state of a weld group is entirely analogous to determining stress on a cross-section using the elastic stress formulas. Here is a figure from the “Design of Welded Structures” textbook by Omer W. Blodgett that illustrates this analogy.
+Welds enable force transfer between two connected members. At the plane of connection, we can think of the weld as the member itself; having its own geometric properties. With this assumption in mind, finding the stress state of a weld group is analogous to finding stress on a cross-section using the elastic stress formulas. Here is a figure from the “Design of Welded Structures” textbook by Omer W. Blodgett that illustrates this analogy.
 
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_comparison.png?raw=true" alt="demo" style="width: 50%;" />
@@ -217,7 +217,7 @@ Notations:
 
 **Force/Length Convention - Treating Welds as Lines**
 
-In the structural engineering context, welds are often thought of as 1-dimensional "lines". As such, results are often expressed as **force per unit length** (e.g. kip/in) rather than force per unit area (e.g. ksi). But why introduce another layer of abstraction when the above section property formulas are perfectly fine? 
+In the structural engineering context, welds are often thought of as 1-dimensional "lines". As such, results are often expressed as **force per unit length** (e.g. kip/in) rather than force per unit area (e.g. ksi). But why introduce another layer of abstraction when the above formulas are completely fine? 
 
 Quoting Omer W. Blodgett's in his textbook first published in 1966. Chapter 2.2-8:
 
@@ -228,12 +228,7 @@ In Chapter 7.4-7, Blodgett presents two other reasons for treating welds as line
 * With the line method, geometric properties, as well as demands can be calculated without specifying a thickness upfront. This is convenient from a workflow perspective because engineers can now calculate a demand, then specify a thickness afterwards. In the pre-calculator era when engineering calculations are not automated, change in the input parameter could mean revising pages of calculation by hand.
 * Stress transformation and combination is complicated and burdensome to do by hand. The "force per unit length" convention is a design simplification that circumvents the thorny problem of stress transformations and change of basis.
 
-Here a table from the Omer W. Blodgett textbook that provides equations for common weld group geometric properties (1 dimensions less):
-
-<div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_properties.png?raw=true" alt="demo" style="width: 60%;" />
-</div>
-Here are the exact same formulas as the previous section with one dimension less (t = unity):
+Here are the exact same formulas as the previous section with one dimension less (set t = 1.0):
 
 $$x_{cg} = \frac{\sum x_i L_i}{\sum L}$$
 
@@ -263,25 +258,37 @@ $$S_{y,left} = \frac{I_y}{c_{y1}}$$
 
 $$S_{y,right} = \frac{I_y}{c_{y2}}$$
 
-An important limitation of the line method is that it assumes uniform thickness within a weld group. The above table should NOT be used for **weld groups with variable thicknesses.** In the rare case that a weld group has variable thickness, first calculate an "effective" length in proportional with the minimum thickness within the weld group, then use this modified length instead in the equations above.
-
-$$L_{effective,i} = \frac{t_i}{t_{min}} \times L_i$$
-
-The resulting forces are also modified:
-
-$$v_i\times(L_{effective,i} / L_i)$$
-
-It is quite easy to convert between the two conventions if you have uniform thickness:
+It is quite easy to convert between the two conventions if a weld group has uniform thickness:
 
 $$(ksi) = \frac{(k/in)}{t_{weld}}$$
 
 $$(in^4) = (in^3)\times t_{weld}$$
+
+Here a table from the Omer W. Blodgett textbook that provides equations for common weld group geometric properties:
+
+<div align="center">
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_properties.png?raw=true" alt="demo" style="width: 60%;" />
+</div>
+
+The above table should NOT be used for **weld groups with variable thicknesses.** In the rare case that a weld group has variable thickness, first calculate an "effective" length in proportional with the minimum thickness within the weld group, then use this effective length in the equations above.
+
+$$L_{effective,i} = \frac{t_i}{t_{min}} \times L_i$$
+
+The resulting force must also be scaled:
+
+$$v_i\times(L_{effective,i} / L_i)$$
 
 
 
 **Weld Stress Via Elastic Method**
 
 A weld group may be subjected to loading in all 6 degrees of freedom. These applied loads are then translated into stresses using the geometric properties above and the elastic stress formulas below. 
+
+```html
+<div align="center">
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_dof.png?raw=true" alt="demo" style="width: 60%;" />
+</div>
+```
 
 
 
@@ -323,13 +330,15 @@ $$v_{y,total} = v_{y,direct} + v_{y,torsional}$$
 
 $$v_{z,total} = v_{z,direct} + v_{z,Mx} + v_{z,My}$$
 
-The three terms above are then combined into a single value and compared to a design capacity. In the next two sections, $\tau$ will be used to denote stress, $v$ will be used to denote unit force.
+For design purposes, the three terms above are combined into a single value and compared to a design capacity. 
+
+In the next two sections, $\tau$ will be used to denote stress, $v$ will be used to denote unit force.
 
 
 
 **Resultant Unit Force - Simplified Approach**
 
-Using the "weld-as-line" convention (force/length), the three components above are simply added vectorially into a resultant shear force, then compared with an allowable shear capacity. 
+Using the "weld-as-line" convention (force/length), the three components above are simply added vectorially into a resultant unit shear force, then compared with an allowable unit shear capacity. 
 
 $$v_{resultant} = \sqrt{v_{x,total}^2 + v_{y,total}^2 + v_{z,total}^2} \leq \phi\frac{F_{EXX}}{\sqrt{3}}t_{weld} \approx \phi0.6F_{EXX}t_{weld}$$
 
@@ -345,7 +354,7 @@ $$\sigma_v = \sqrt{\sigma_{zz}^2 + 3[\tau_{xy}^2+\tau_{yz}^2]}$$
 
 
 
-In the case PJPs, the Von-Mises stress can be expressed as a function of global stress terms without any coordinate transformation. The global vertical axis (Z) always corresponds with the normal stress vector, and magnitude of the in-plane resultant ($\tau_{xy}^2 + \tau_{yz}^2$) is always the same regardless of the coordinate system in which it is expressed. Therefore, the Von-Mises criterion for PJPs is calculated as:
+For PJPs, the Von-Mises stress can be expressed as a function of global stress terms without any coordinate transformation. The global vertical axis (Z) always aligns with the normal stress vector, and magnitude of the in-plane resultant ($\tau_{xy}^2 + \tau_{yz}^2$) is always the same regardless of the coordinate system. Therefore, the Von-Mises criterion for PJPs is calculated as:
 
 $$\sigma_v = \sqrt{\tau_{z, total}^2 + 3[\tau_{x, total}^2+\tau_{y, total}^2]} \leq \phi F_{EXX}$$
 
@@ -354,19 +363,17 @@ $$\sigma_v = \sqrt{\tau_{z, total}^2 + 3[\tau_{x, total}^2+\tau_{y, total}^2]} \
 In the case of fillet welds, we must first established a local coordinate system to map global stress to a local stress. 
 
 ```math
-\{ \tau_{X},  \tau_{Y} , \tau_{Z} \} \rightarrow { \tau_{x'},  \tau_{y'} , \tau_{z'} \} \rightarrow \{ \sigma_{\perp},  \tau_{\parallel} , \tau_{\perp} \}
+\{ \tau_{X},  \tau_{Y} , \tau_{Z} \} \rightarrow { \tau_{x},  \tau_{y} , \tau_{z} \} \rightarrow \{ \sigma_{\perp},  \tau_{\parallel} , \tau_{\perp} \}
 ```
 
 
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_coord.png?raw=true" alt="demo" style="width: 60%;" />
 </div>
-<div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/fillet_coord.png?raw=true" alt="demo" style="width: 40%;" />
-</div>
 
 
-A fillet weld actually has three failure planes. It is typical to assume failure along the inclined throat of the weld. Therefore, the local coordinate system must also be rotated 45 degrees. Refer to this [Engineering Stack Exchange post](https://engineering.stackexchange.com/questions/37181/why-is-fillet-weld-assumed-to-be-in-a-state-of-pure-shear-stress) for more info. Let's first establish the requisite composite rotation matrix.
+
+A fillet weld actually has three failure planes. It is typical to assume failure along the inclined throat of the weld. Therefore, the local coordinate system must also be rotated 45 degrees. Refer to this [Engineering Stack Exchange post](https://engineering.stackexchange.com/questions/37181/why-is-fillet-weld-assumed-to-be-in-a-state-of-pure-shear-stress) for more info. Let us first establish the requisite composite rotation matrix.
 
 First, the longitudinal basis vector **(x')** is established by the start and end point of the weld line defined by the user.
 
@@ -401,14 +408,14 @@ $$
 0 & sin(45) & cos(45)\end{bmatrix}
 $$
 
-Apply the first transformation $[T]$ to obtain unit force expressed in x', y', and z'.
+Apply the first transformation $[T]$ to obtain unit force expressed in x', y', and z' local axis.
 
 ```math
 \{ v_{x'},  v_{y'} , v_{z'} \} = [T] \{ v_{X},  v_{Y} , v_{Z} \}
 ```
 
 
-Apply both $[T]$ and $[T_{45}]$ to get unit force expressed about the inclined local axis. Notice how we post-multiply $T_{45}$ because we want rotations to apply "intrinsically" (reading left to right). In other words, we want the 45 degree rotation about the local x' axis to occur after the first transformation.
+Apply both $[T]$ and $[T_{45}]$ to get unit force expressed about the inclined local axis. Notice how we post-multiply $T_{45}$ because we want rotations to apply "intrinsically" (reading left to right). In other words, we want the 45 degree rotation to occur after the first transformation.
 
 ```math
 \{ v_{\parallel},  v_{\perp} , n_{\perp}\} = [T][T_{45}] \{ v_{X},  v_{Y} , v_{Z} \}
@@ -426,7 +433,7 @@ $$\tau = v/t_{throat}$$
 
 * It is impossible to know whether we should rotate -45 or +45 degrees without knowing the orientation of the fillet weld first. If we only rotate by a +45 degrees, it is ambiguous whether z' or y' becomes $\sigma_{\perp}$. By default, EZweld takes the conservative approach of multiplying everything within the square root by 3. You can override this behavior by explicitly specifying a rotation angle when calling the .solve() method.
 
-
+$$\sigma_v = \sqrt{3[\sigma_{\perp}^2 + \tau_{\parallel}^2+\tau_{\perp}^2]} \leq \phi F_{EXX}$$
 
 
 
