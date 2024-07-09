@@ -162,6 +162,7 @@ Welds enable force transfer between two connected members. At the plane of conne
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_comparison.png?raw=true" alt="demo" style="width: 50%;" />
 </div>
+
 First, we need to calculate the weld group's geometric properties. EZweld does so by discretizing the weld group into little patches then applying the parallel axis theorem.
 
 Area:
@@ -264,19 +265,15 @@ $$(ksi) = \frac{(k/in)}{t_{weld}}$$
 
 $$(in^4) = (in^3)\times t_{weld}$$
 
-Here a table from the Omer W. Blodgett textbook that provides equations for common weld group geometric properties:
-
-<div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_properties.png?raw=true" alt="demo" style="width: 60%;" />
-</div>
-
-The above table should NOT be used for **weld groups with variable thicknesses.** In the rare case that a weld group has variable thickness, first calculate an "effective" length in proportional with the minimum thickness within the weld group, then use this effective length in the equations above.
+In the rare case that a **weld group has variable thickness**, we must first calculate an "effective" length in proportional with the minimum thickness in the weld group, then use this effective length in the equations above. Be careful when using design equations provided in building codes and design guides as they often have the inherent assumption of uniform thicknesses.
 
 $$L_{effective,i} = \frac{t_i}{t_{min}} \times L_i$$
 
-The resulting force must also be scaled:
+The resulting force must also be modified:
 
 $$v_i\times(L_{effective,i} / L_i)$$
+
+
 
 
 
@@ -284,11 +281,10 @@ $$v_i\times(L_{effective,i} / L_i)$$
 
 A weld group may be subjected to loading in all 6 degrees of freedom. These applied loads are then translated into stresses using the geometric properties above and the elastic stress formulas below. 
 
-```html
+
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_dof.png?raw=true" alt="demo" style="width: 60%;" />
 </div>
-```
 
 
 
