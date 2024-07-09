@@ -51,7 +51,7 @@ weld_group.plot_results()
 Sign convention shown below:
 
 <div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_dof.png?raw=true" alt="demo" style="width: 60%;" />
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_dof.png?raw=true" alt="demo" style="width: 40%;" />
 </div>
 
 `weld_group.preview()` returns a matplotlib figure showing what the weld group looks like and its geometric properties.
@@ -281,10 +281,10 @@ $$v_i\times(L_{effective,i} / L_i)$$
 
 A weld group may be subjected to loading in all 6 degrees of freedom. These applied loads are then translated into stresses using the geometric properties above and the elastic stress formulas below. 
 
-
 <div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_dof.png?raw=true" alt="demo" style="width: 60%;" />
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_dof.png?raw=true" alt="demo" style="width: 40%;" />
 </div>
+
 
 
 
@@ -350,7 +350,7 @@ $$\sigma_v = \sqrt{\sigma_{zz}^2 + 3[\tau_{xy}^2+\tau_{yz}^2]}$$
 
 
 
-For PJPs, the Von-Mises stress can be expressed as a function of global stress terms without any coordinate transformation. The global vertical axis (Z) always aligns with the normal stress vector, and magnitude of the in-plane resultant ($\tau_{xy}^2 + \tau_{yz}^2$) is always the same regardless of the coordinate system. Therefore, the Von-Mises criterion for PJPs is calculated as:
+For PJPs, the Von-Mises stress can be expressed as a function of global stress terms without any coordinate transformation. The global vertical axis (Z) always aligns with the normal stress vector, and magnitude of the in-plane resultant ($\tau_{xy}^2 + \tau_{yz}^2$) is constant regardless of the coordinate system. Therefore, the Von-Mises criterion for PJPs is calculated as:
 
 $$\sigma_v = \sqrt{\tau_{z, total}^2 + 3[\tau_{x, total}^2+\tau_{y, total}^2]} \leq \phi F_{EXX}$$
 
@@ -358,8 +358,10 @@ $$\sigma_v = \sqrt{\tau_{z, total}^2 + 3[\tau_{x, total}^2+\tau_{y, total}^2]} \
 
 In the case of fillet welds, we must first established a local coordinate system to map global stress to a local stress. 
 
+
+
 ```math
-\{ \tau_{X},  \tau_{Y} , \tau_{Z} \} \rightarrow { \tau_{x},  \tau_{y} , \tau_{z} \} \rightarrow \{ \sigma_{\perp},  \tau_{\parallel} , \tau_{\perp} \}
+\{ \tau_{X},  \tau_{Y} , \tau_{Z} \} \rightarrow \{ \sigma_{\perp},  \tau_{\parallel} , \tau_{\perp} \}
 ```
 
 
@@ -411,7 +413,7 @@ Apply the first transformation $[T]$ to obtain unit force expressed in x', y', a
 ```
 
 
-Apply both $[T]$ and $[T_{45}]$ to get unit force expressed about the inclined local axis. Notice how we post-multiply $T_{45}$ because we want rotations to apply "intrinsically" (reading left to right). In other words, we want the 45 degree rotation to occur after the first transformation.
+Apply both $[T]$ and $[T_{45}]$ to get unit force expressed about the inclined local axis. Notice how we post-multiply $T_{45}$ because we want rotations to apply "intrinsically" (reading left to right). In other words, we want the 45 degree rotation to occur second.
 
 ```math
 \{ v_{\parallel},  v_{\perp} , n_{\perp}\} = [T][T_{45}] \{ v_{X},  v_{Y} , v_{Z} \}
