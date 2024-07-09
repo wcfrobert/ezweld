@@ -218,6 +218,12 @@ Notations:
 
 **Force/Length Convention - Treating Welds as Lines**
 
+Here is a weld group geometric properties table from Omer W. Blodgett textbook. Notice how the equations have one dimensions less.
+
+<div align="center">
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_properties.png?raw=true" alt="demo" style="width: 50%;" />
+</div>
+
 In the structural engineering context, welds are often thought of as 1-dimensional "lines". As such, results are often expressed as **force per unit length** (e.g. kip/in) rather than force per unit area (e.g. ksi). But why introduce another layer of abstraction when the above formulas are completely fine? 
 
 Quoting Omer W. Blodgett's in his textbook first published in 1966. Chapter 2.2-8:
@@ -370,8 +376,13 @@ In the case of fillet welds, we must first established a local coordinate system
 </div>
 
 
+A fillet weld actually has three failure planes. It is typical to assume failure along the inclined throat of the weld. Therefore, the local coordinate system must also be rotated 45 degrees. Refer to this [Engineering Stack Exchange post](https://engineering.stackexchange.com/questions/37181/why-is-fillet-weld-assumed-to-be-in-a-state-of-pure-shear-stress) for more info. 
 
-A fillet weld actually has three failure planes. It is typical to assume failure along the inclined throat of the weld. Therefore, the local coordinate system must also be rotated 45 degrees. Refer to this [Engineering Stack Exchange post](https://engineering.stackexchange.com/questions/37181/why-is-fillet-weld-assumed-to-be-in-a-state-of-pure-shear-stress) for more info. Let us first establish the requisite composite rotation matrix.
+Rotating a stress vector is inconvenient because the associated dA must also be rotated, but notice that we are not looking at an infinitesimally small cube yet, evaluation of the fillet geometry is still a macro level exercise. In the derivations below, work with force first, then divide by the thickness to get stress:
+
+$$\tau = v/t_{throat}$$
+
+First, let us establish the requisite composite rotation matrix.
 
 First, the longitudinal basis vector **(x')** is established by the start and end point of the weld line defined by the user.
 
@@ -413,7 +424,7 @@ Apply the first transformation $[T]$ to obtain unit force expressed in x', y', a
 ```
 
 
-Apply both $[T]$ and $[T_{45}]$ to get unit force expressed about the inclined local axis. Notice how we post-multiply $T_{45}$ because we want rotations to apply "intrinsically" (reading left to right). In other words, we want the 45 degree rotation to occur second.
+Apply both $[T]$ and $[T_{45}]$ to get unit force expressed about the inclined local axis. Notice how we post-multiply $T_{45}$ because we want rotations to apply "intrinsically" (reading left to right). In other words, we want the 45 degree rotation to occur after the first.
 
 ```math
 \{ v_{\parallel},  v_{\perp} , n_{\perp}\} = [T][T_{45}] \{ v_{X},  v_{Y} , v_{Z} \}
@@ -423,15 +434,11 @@ Now we can calculate Von-Mises stress for fillet welds on this inclined plane:
 
 $$\sigma_v = \sqrt{\sigma_{\perp}^2 + 3[\tau_{\parallel}^2+\tau_{\perp}^2]} \leq \phi F_{EXX}$$
 
-Two important caveats about the derivation above:
-
-* Rotating a stress vector is more complex because the associated dA must also be rotated, but notice that we are not looking at an infinitesimally small cube yet, evaluation of the fillet geometry is still a macro level exercise. In the equations above, work with force first, then divide by the thickness to get stress:
-
-$$\tau = v/t_{throat}$$
-
-* It is impossible to know whether we should rotate -45 or +45 degrees without knowing the orientation of the fillet weld first. If we only rotate by a +45 degrees, it is ambiguous whether z' or y' becomes $\sigma_{\perp}$. By default, EZweld takes the conservative approach of multiplying everything within the square root by 3. You can override this behavior by explicitly specifying a rotation angle when calling the .solve() method.
+It is difficult to know whether we should rotate -45 or +45 degrees without knowing the orientation of the fillet weld first. If we only rotate by a +45 degrees, it is ambiguous whether z' or y' becomes $\sigma_{\perp}$. By default, EZweld takes the conservative approach of multiplying everything within the square root by 3.
 
 $$\sigma_v = \sqrt{3[\sigma_{\perp}^2 + \tau_{\parallel}^2+\tau_{\perp}^2]} \leq \phi F_{EXX}$$
+
+You can override this behavior by explicitly specifying a rotation angle when calling the .solve() method that would align z' with $\sigma_{\perp}$. The user input in its current form is concise and intuitive. I am hesitant to introduce more parameters about the type of weld + orientation.
 
 
 
@@ -458,7 +465,7 @@ $$\sigma_v = \sqrt{3[\sigma_{\perp}^2 + \tau_{\parallel}^2+\tau_{\perp}^2]} \leq
   $$\theta_p = 0.5\times tan^{-1}(\frac{I_{xy}}{I_x - I_y})$$
 
 * A key limitation of the elastic method is the assumption that no bearing surface exists. Consequently, out-of-plane moment must be resolved through the welds alone. This is done by assuming a very conservative neutral axis location that coincides with the weld group centroid, which means half of the weld fibers are put into compression to maintain equilibrium.
-* The elastic method does not take into account deformation compatibility and the effect of load angle. Welds are assumed to share loads equally under direct shear. In actuality, welds oriented transversely to applied loading have up to 50% higher capacity and stiffness (but lower ductility). Refer to the steel construction manual for more guidance on this matter.
+* The elastic method does not take into account deformation compatibility and the effect of load angle. Welds are assumed to share loads equally under direct shear. In actuality, welds oriented transversely to applied loading have up to 50% higher capacity and stiffness (but lower ductility). 
 
 
 
