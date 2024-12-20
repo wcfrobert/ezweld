@@ -9,7 +9,7 @@
 
 
 <div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/demo.gif?raw=true" alt="demo" style="width: 75%;" />
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/demo.gif?raw=true" alt="demo" style="width: 100%;" />
 </div>
 
 
@@ -55,7 +55,7 @@ weld_group.plot_results_3D()
 Sign convention shown below:
 
 <div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_dof.png?raw=true" alt="demo" style="width: 100%;" />
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_dof.png?raw=true" alt="demo" style="width: 40%;" />
 </div>
 
 `weld_group.preview()` returns a matplotlib figure showing what the weld group looks like and its geometric properties.
