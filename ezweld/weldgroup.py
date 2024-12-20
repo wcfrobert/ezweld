@@ -35,10 +35,10 @@ class WeldGroup:
         # applied force
         self.Vx = None                  # applied shear horizontal X
         self.Vy = None                  # applied shear vertical Y
-        self.tension = None             # applied axial tension
+        self.Vz = None                  # applied out-of-plane axial force
         self.Mx = None                  # applied out of plane moment about X
         self.My = None                  # applied out of plane moment about Y
-        self.torsion = None             # applied in-plane torsion about Z
+        self.Mz = None                  # applied in-plane torsion about Z
         
         # geometric properties (stress)
         self.x_centroid = None          # centroid x
@@ -94,6 +94,8 @@ class WeldGroup:
                            "vz_total": [],               # z shear total = direct + overturningX + overturningY
                            "v_resultant": [],            # resultant shear from SRSS of x, y, z shear
                            
+                                                         # the quantity above are per-inch basis (k/in).
+                                                         # need to convert to actual kips before checking equilibrium
                            "Fx":[],                      # used to verify equilibrium sum_Fx = 0
                            "Fy":[],                      # used to verify equilibrium sum_Fy = 0
                            "Fz":[],                      # used to verify equilibrium sum_Fz = 0
@@ -412,17 +414,17 @@ class WeldGroup:
         plt.tight_layout()
             
             
-    def solve(self, Vx=0, Vy=0, Mx=0, My=0, torsion=0, tension=0):
+    def solve(self, Vx=0, Vy=0, Vz=0, Mx=0, My=0, Mz=0):
         """
         Start analysis.
         
         Arguments:
             Vx                  (OPTIONAL) float:: in-plane shear in X direction. Default = 0
             Vy                  (OPTIONAL) float:: in-plane shear in Y direction. Default = 0
+            Vz                  (OPTIONAL) float:: out-of-plane axial force (negative is compression). Default = 0
             Mx                  (OPTIONAL) float:: out-of-plane moment around X-axis. Default = 0
             My                  (OPTIONAL) float:: out-of-plane moment around Y-axis. Default = 0
-            torsion             (OPTIONAL) float:: in-plane torsion. Default = 0
-            tension             (OPTIONAL) float:: out-of-plane axial force (negative is compression). Default = 0
+            Mz                  (OPTIONAL) float:: in-plane torsion. Default = 0
             
         Returns:
             df_weld             dataframe:: calculation summary table
@@ -432,15 +434,15 @@ class WeldGroup:
         self.Vy = Vy
         self.Mx = Mx
         self.My = My
-        self.torsion = torsion
-        self.tension = tension
+        self.Mz = Mz
+        self.Vz = Vz
         
         # calculate geometric properties
         self.update_geometric_properties()
         
         # EXCEPTION: no applied loading
-        if Vx==0 and Vy==0 and Mx==0 and My==0 and torsion==0 and tension==0:
-            return "No loading applied to weld group"
+        if Vx==0 and Vy==0 and Mx==0 and My==0 and Mz==0 and Vz==0:
+            raise RuntimeError("No loading applied to weld group")
         
         # WARNING: weld group not defined with respect to principal axis
         if abs(self.theta_p) > 0.1:  #deg
@@ -457,10 +459,10 @@ class WeldGroup:
             
             # kip/in (per foot basis)
             vx_direct = - Vx / self.Le_force * length_factor
-            vx_torsion = torsion * dy / self.Iz_force * length_factor
+            vx_torsion = Mz * dy / self.Iz_force * length_factor
             vy_direct = - Vy / self.Le_force * length_factor
-            vy_torsion = - torsion * dx / self.Iz_force * length_factor
-            vz_direct = - tension / self.Le_force * length_factor
+            vy_torsion = - Mz * dx / self.Iz_force * length_factor
+            vz_direct = - Vz / self.Le_force * length_factor
             vz_Mx = -Mx * dy / self.Ix_force * length_factor
             vz_My = My * dx / self.Iy_force * length_factor
             vx_total = vx_direct + vx_torsion
@@ -497,10 +499,10 @@ class WeldGroup:
         
             ################# STRESS ########################
             tauX_direct = - Vx / self.A
-            tauX_torsion = torsion * dy / self.Iz
+            tauX_torsion = Mz * dy / self.Iz
             tauY_direct = - Vy / self.A
-            tauY_torsion = - torsion * dx / self.Iz
-            tauZ_direct = - tension / self.A
+            tauY_torsion = - Mz * dx / self.Iz
+            tauZ_direct = - Vz / self.A
             tauZ_Mx = -Mx * dy / self.Ix
             tauZ_My = My * dx / self.Iy
             tauX_total = tauX_direct + tauX_torsion
@@ -545,10 +547,10 @@ class WeldGroup:
         
         residual_Fx = sumFx + self.Vx
         residual_Fy = sumFy + self.Vy
-        residual_Fz = sumFz + self.tension
+        residual_Fz = sumFz + self.Vz
         residual_Mx = sumMx + self.Mx
         residual_My = sumMy + self.My
-        residual_Mz = sumMz + self.torsion
+        residual_Mz = sumMz + self.Mz
         
         flag_Fx = "OK" if abs(residual_Fx) < TOL else "WARNING: NOT OKAY. EQUILIBRIUM NOT SATISFIED"
         flag_Fy = "OK" if abs(residual_Fy) < TOL else "WARNING: NOT OKAY. EQUILIBRIUM NOT SATISFIED"
@@ -560,10 +562,10 @@ class WeldGroup:
         if flag_Fx !="OK" or flag_Fy !="OK" or flag_Fz !="OK" or flag_Mx !="OK" or flag_My !="OK" or flag_Mz !="OK":
             print(f"\t\t Fx_applied={self.Vx:.2f},\t  sumFx={sumFx:.2f},\t residual = {residual_Fx:.2f},\t {flag_Fx}")
             print(f"\t\t Fy_applied={self.Vy:.2f},\t  sumFy={sumFy:.2f},\t residual = {residual_Fy:.2f},\t {flag_Fy}")
-            print(f"\t\t Fz_applied={self.tension:.2f},\t  sumFz={sumFz:.2f},\t residual = {residual_Fz:.2f},\t {flag_Fz}")
+            print(f"\t\t Fz_applied={self.Vz:.2f},\t  sumFz={sumFz:.2f},\t residual = {residual_Fz:.2f},\t {flag_Fz}")
             print(f"\t\t Mx_applied={self.Mx:.2f},\t  sumMx={sumMx:.2f},\t residual = {residual_Mx:.2f},\t {flag_Mx}")
             print(f"\t\t My_applied={self.My:.2f},\t  sumMy={sumMy:.2f},\t residual = {residual_My:.2f},\t {flag_My}")
-            print(f"\t\t Mz_applied={self.torsion:.2f},\t  sumMz={sumMz:.2f},\t residual = {residual_Mz:.2f},\t {flag_Mz}")
+            print(f"\t\t Mz_applied={self.Mz:.2f},\t  sumMz={sumMz:.2f},\t residual = {residual_Mz:.2f},\t {flag_Mz}")
             raise RuntimeError("Error: Equilibrium check failed.")
         
         
@@ -574,10 +576,10 @@ class WeldGroup:
         # plot unit force or stress
         if plot == "force":
             magnitude = self.dict_welds["v_resultant"]
-            title = "Weld Group Contours (k/in)"
+            title = "Shear Resultant Force (k/in)"
         else:
             magnitude = self.dict_welds["sigma_vm"]
-            title = "Weld Group Contours (ksi)"
+            title = "Shear Stress Contour (ksi)"
         
         # normalize thickness for display
         DEFAULT_THICKNESS = 0.25
@@ -719,13 +721,13 @@ class WeldGroup:
                         (xo,yo-dy*1), xycoords='axes fraction', fontsize=12, va="top", ha="left")
         axs[0].annotate(r"$V_y = {:.2f} \quad kips$".format(self.Vy), 
                         (xo,yo-dy*2), xycoords='axes fraction', fontsize=12, va="top", ha="left")
-        axs[0].annotate(r"$V_z = {:.2f} \quad kips$".format(self.tension), 
+        axs[0].annotate(r"$V_z = {:.2f} \quad kips$".format(self.Vz), 
                         (xo,yo-dy*3), xycoords='axes fraction', fontsize=12, va="top", ha="left")
         axs[0].annotate(r"$M_x = {:.2f} \quad k.in$".format(self.Mx), 
                         (xo,yo-dy*4), xycoords='axes fraction', fontsize=12, va="top", ha="left")
         axs[0].annotate(r"$M_y = {:.2f} \quad k.in$".format(self.My), 
                         (xo,yo-dy*5), xycoords='axes fraction', fontsize=12, va="top", ha="left")
-        axs[0].annotate(r"$M_z = {:.2f} \quad k.in$".format(self.torsion), 
+        axs[0].annotate(r"$M_z = {:.2f} \quad k.in$".format(self.Mz), 
                         (xo,yo-dy*6), xycoords='axes fraction', fontsize=12, va="top", ha="left")
         
         # styling
@@ -737,70 +739,204 @@ class WeldGroup:
         plt.tight_layout()
     
     
-    def plot_results_3D(self, plot="force", colormap="jet", cmin="auto", cmax="auto"):
+    def plot_results_3D(self, colormap="jet", cmin="auto", cmax="auto"):
         """
         use plotly to generate an interactive plot
-        """
-        # plot unit force or stress
-        if plot == "force":
-            magnitude = self.dict_welds["v_resultant"]
-            title = "Weld Group Contours (k/in)"
-        else:
-            magnitude = self.dict_welds["sigma_vm"]
-            title = "Weld Group Contours (ksi)"
-            
-        # initialize a plotly figure with 4 subplots
+        """     
+        # initialize a plotly figure with 2 subplots
         fig = make_subplots(rows=2, cols=2,
-                            subplot_titles=("Weld Group Properties", "Contour Plot", "Applied Loading", "Quiver Plot"),
-                            row_heights=[0.5, 0.5],
+                            subplot_titles=("Weld Group Properties", "Vector Plot", "Applied Loading"),
                             column_widths=[0.3, 0.7],
+                            row_heights=[0.65, 0.35],
                             horizontal_spacing=0.02,
                             vertical_spacing=0.05,
-                            specs = [[{"type":"xy"}, {"type":"scatter3d"}],
-                                     [{"type":"xy"}, {"type":"scatter3d"}]]
-                            )
-        
-        fig.add_trace(go.Scatter(y=[2, 3, 1]),row=1, col=1)
-        fig.add_trace(go.Scatter(y=[2, 3, 1]),row=2, col=1)
-        
-        fig.add_trace(go.Scatter3d(x=[2, 3, 1], y=[0, 0, 0],
-                                   z=[0.5, 1, 2], mode="lines"),row=1, col=2)
-        fig.add_trace(go.Scatter3d(x=[2, 3, 1], y=[0, 0, 0],
-                                   z=[0.5, 1, 2], mode="lines"),row=2, col=2)
-        
+                            specs = [[{"type":"table"}, {"type":"scene","rowspan":2}],
+                                     [{"type":"table"}, None],
+                                     ])
         
         # properties table
-        property_table = go.Table(header=dict(values=['A Scores', 'B Scores'],
-                                                line_color='darkslategray',
-                                                fill_color='lightskyblue',
-                                                align='left'),
-                                  cells=dict(values=[[100, 90, 80, 90], # 1st column
-                                                   [95, 85, 75, 95]], # 2nd column
-                                                   line_color='darkslategray',
-                                                   fill_color='lightcyan',
-                                                   align='left'))
-        #fig.add_trace(property_table, row=2, col=1)
-            
-            
-            
-            
-        # plot_data1 = go.Scatter3d(x,y,z,name="data")
-        # fig.add_trace(plot_data1)
+        table_properties = [r"$x_{{cg}}$",
+                     r"$y_{{cg}}$",
+                     r"$L$",
+                     r"$L_e$",
+                     r"$I_{x}$",
+                     r"$I_{y}$",
+                     r"$I_{z}$",
+                     r"$S_{{x,top}}$",
+                     r"$S_{{x,bottom}}$",
+                     r"$S_{{y,right}}$",
+                     r"$S_{{y,left}}$"]
+        table_values = [r"${:.2f} \quad in$".format(self.x_centroid_force),
+                        r"${:.2f} \quad in$".format(self.y_centroid_force),
+                        r"${:.1f} \quad in$".format(self.L_force),
+                        r"${:.1f} \quad in$".format(self.Le_force),
+                        r"${:.1f} \quad in^3$".format(self.Ix_force),
+                        r"${:.1f} \quad in^3$".format(self.Iy_force),
+                        r"${:.1f} \quad in^3$".format(self.Iz_force),
+                        r"${:.1f} \quad in^2$".format(self.Sx1_force),
+                        r"${:.1f} \quad in^2$".format(self.Sx2_force),
+                        r"${:.1f} \quad in^2$".format(self.Sy1_force),
+                        r"${:.1f} \quad in^2$".format(self.Sy2_force)]
+        property_table = go.Table(header_values = ['Parameters', 'Value'],
+                                  header_line_color = "black",
+                                  header_font_color = "white",
+                                  header_fill_color = "#3b3b41",
+                                  header_align = "center",
+                                  header_font_size = 18,
+                                  header_height = 34,
+                                  cells_values = [table_properties, table_values],
+                                  cells_line_color = "black",
+                                  cells_font_color = "black",
+                                  cells_fill_color = "white",
+                                  cells_align = "center",
+                                  cells_font_size = 22,
+                                  cells_height = 34,
+                                  )
+        fig.add_trace(property_table, row=1, col=1)
         
+        # applied force table
+        table_properties = [r"$V_x$",
+                            r"$V_y$",
+                            r"$V_z$",
+                            r"$M_x$",
+                            r"$M_y$",
+                            r"$M_z$"]
+        table_values = [r"${:.1f} \quad kips$".format(self.Vx),
+                        r"${:.1f} \quad kips$".format(self.Vy),
+                        r"${:.1f} \quad kips$".format(self.Vz),
+                        r"${:.1f} \quad k.in$".format(self.Mx),
+                        r"${:.1f} \quad k.in$".format(self.My),
+                        r"${:.1f} \quad k.in$".format(self.Mz)]
+        property_table = go.Table(header_values = ['Applied Load', 'Value'],
+                                  header_line_color = "black",
+                                  header_font_color = "white",
+                                  header_fill_color = "#3b3b41",
+                                  header_align = "center",
+                                  header_font_size = 18,
+                                  header_height = 34,
+                                  cells_values = [table_properties, table_values],
+                                  cells_line_color = "black",
+                                  cells_font_color = "black",
+                                  cells_fill_color = "white",
+                                  cells_align = "center",
+                                  cells_font_size = 22,
+                                  cells_height = 34,
+                                  )
+        fig.add_trace(property_table, row=2, col=1)
+        
+        
+        # plot orgin marker at centroid
+        xmax = max(self.dict_welds["x_centroid"])
+        xmin = min(self.dict_welds["x_centroid"])
+        ymax = max(self.dict_welds["y_centroid"])
+        ymin = min(self.dict_welds["y_centroid"])
+        dmax = max(xmax-xmin, ymax-ymin)/1.5
+        X = go.Scatter3d(
+            x=[self.x_centroid, self.x_centroid + dmax/14],
+            y=[self.y_centroid, self.y_centroid],
+            z=[0,0],
+            mode='lines+text',
+            hoverinfo = 'skip',
+            showlegend=False,
+            line=dict(color='blue', width=5),
+            text=["","X"],
+            textposition="top center",
+            textfont=dict(
+                family="Arial",
+                size=14,
+                color="blue"))
+        fig.add_trace(X, row=1, col=2)
+        Y = go.Scatter3d(
+            x=[self.x_centroid, self.x_centroid],
+            y=[self.y_centroid, self.y_centroid + dmax/14],
+            z=[0,0],
+            mode='lines+text',
+            hoverinfo = 'skip',
+            line=dict(color='red', width=5),
+            text=["","Y"],
+            textposition="top center",
+            showlegend=False,
+            textfont=dict(
+                family="Arial",
+                size=14,
+                color="red"))
+        fig.add_trace(Y,row=1, col=2)
+        Z = go.Scatter3d(
+            x=[self.x_centroid, self.x_centroid],
+            y=[self.y_centroid, self.y_centroid],
+            z=[0, 0 + 0.75],
+            mode='lines+text',
+            hoverinfo = 'skip',
+            line=dict(color='green', width=5),
+            text=["","Z"],
+            textposition="top center",
+            showlegend=False,
+            textfont=dict(
+                family="Arial",
+                size=14,
+                color="green"))
+        fig.add_trace(Z, row=1, col=2)
+        
+        
+        # plot weld stress quiver contour
+        cmin = min(self.df_welds["v_resultant"]) if cmin == "auto" else cmin
+        cmax = max(self.df_welds["v_resultant"]) if cmax == "auto" else cmax
+        if math.isclose(cmax-cmin, 0):
+            cmin = 0
+        sizeref = 1/cmax # fixes arrow scaling issues
+        # need to use sizemode raw which is not available on older versions of plotly
+        custom_hover = '<b>vx</b>: %{u:.2f} k/in<br>' +\
+            '<b>vy</b>: %{v:.2f} k/in<br>' +\
+            '<b>vz</b>: %{w:.2f} k/in<br>' +\
+            '<b>vtotal</b>: %{text:.2f} k/in<br>'
+        cone_plot = go.Cone(x = self.df_welds["x_centroid"],
+                            y = self.df_welds["y_centroid"],
+                            z = [0] * len(self.df_welds["y_centroid"]),
+                            u = self.df_welds["vx_total"],
+                            v = self.df_welds["vy_total"],
+                            w = self.df_welds["vz_total"],
+                            text = self.df_welds["v_resultant"],
+                            colorbar_title_text="(k/in)",
+                            hovertemplate = custom_hover,
+                            hoverlabel_font_size=16,
+                            colorscale=colormap,
+                            cmin=cmin,
+                            cmax=cmax,
+                            sizemode = "raw",
+                            sizeref = sizeref)
+        fig.add_trace(cone_plot, row=1, col=2)
+        
+
         # change such that axes are in proportion.
-        # fig.update_scenes(aspectmode="data")
+        fig.update_scenes(aspectmode="data")
         
         # add title
         fig.update_layout(title="<b>Weld Group Result Summary</b>",
                           title_xanchor="center",
-                          title_font_size=24,
+                          title_font_size=22,
                           title_x=0.5, 
-                          title_y=0.95,
-                          title_font_color="white")
-        # background color
-        fig.update_layout(paper_bgcolor="#3b3b41",
-                          font_color="white")
+                          title_y=0.98,
+                          title_font_color="black")
         
+        # background color
+        fig.update_layout(paper_bgcolor="white",
+                          font_color="black")
+        
+        # adjust zoom level and default camera position
+        fig.update_scenes(camera_eye=dict(x=2, y=2, z=2))
+        
+        # change origin to be on the bottom left corner
+        fig.update_scenes(xaxis_autorange="reversed")
+        fig.update_scenes(yaxis_autorange="reversed")
+        fig.update_scenes(xaxis_backgroundcolor="white",
+                          yaxis_backgroundcolor="white",
+                          xaxis_gridcolor="grey",
+                          yaxis_gridcolor="grey",
+                          xaxis_gridwidth=0.5,
+                          yaxis_gridwidth=0.5,
+                          zaxis_visible=False,
+                          )
+        fig.show()
         return fig
 
 
