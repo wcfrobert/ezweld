@@ -55,31 +55,31 @@ weld_group.plot_results_3D()
 Sign convention shown below:
 
 <div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_dof.png?raw=true" alt="demo" style="width: 40%;" />
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_dof.png?raw=true" alt="demo" style="width: 100%;" />
 </div>
 
 `weld_group.preview()` returns a matplotlib figure showing what the weld group looks like and its geometric properties.
 
 <div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/plot0.png?raw=true" alt="demo" style="width: 40%;" />
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/plot0.png?raw=true" alt="demo" style="width: 80%;" />
 </div>
 
 `weld_group.solve()` returns a pandas dataframe containing all the results.
 
 <div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/results0.png?raw=true" alt="demo" style="width: 40%;" />
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/results0.png?raw=true" alt="demo" style="width: 80%;" />
 </div>
 
 `weld_group.plot_results()` returns a matplotlib 2D figure.
 
 <div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/plot1.png?raw=true" alt="demo" style="width: 40%;" />
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/plot1.png?raw=true" alt="demo" style="width: 80%;" />
 </div>
 
 `weld_group.plot_results_3D()` returns interactive plotly 3D figure .
 
 <div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/demo.gif?raw=true" alt="demo" style="width: 40%;" />
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/demo.gif?raw=true" alt="demo" style="width: 80%;" />
 </div>
 
 ## Installation
