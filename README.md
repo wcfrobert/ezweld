@@ -9,7 +9,7 @@
 
 
 <div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/demo.gif?raw=true" alt="demo" style="width: 100%;" />
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/plot1.png?raw=true" alt="demo" style="width: 100%;" />
 </div>
 
 
