@@ -9,12 +9,13 @@
 
 
 <div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/plot1.png?raw=true" alt="demo" style="width: 80%;" />
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/plot1.png?raw=true" alt="demo" style="width: 70%;" />
 </div>
 
 
 
 - [Quick Start](#quick-start)
+- [Validation](#validation)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Theoretical Background](#theoretical-background)
@@ -81,6 +82,36 @@ Sign convention shown below:
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/demo.gif?raw=true" alt="demo" style="width: 80%;" />
 </div>
+
+## Validation
+
+**Example 1:** Two 8" vertical strips, separated by 6" width, subjected to Vy = -50 kips, and Mx = 120 k.in.
+
+According to the Blodgett textbook formulas:
+
+$$S_w = d^2/3 = (8)^2/3 = 21.33 in^2$$
+
+$$J_w = \frac{d(3b^2+d^2)}{6} = \frac{8(3(6)^2+8^2)}{6} = 229.33 in^3$$
+
+$$L_w = (8)(2) = 16 in$$
+
+Hand calculated maximum weld unit force:
+
+$$v_{Vy}$$ = V_y/L_w = 50/16 = 3.125 k/in
+
+$$v_{Mx}$$ = M_x/S_w = 120/21.33 = 5.626 k/in
+
+$$v_{resultant} = \sqrt{3.125^2 + 5.626^2} = 6.435 k/in$$
+
+This matches ezweld's output:
+
+<div align="center">
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/example1.png?raw=true" alt="demo" style="width: 80%;" />
+</div>
+
+
+
+
 
 ## Installation
 

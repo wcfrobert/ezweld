@@ -11,7 +11,7 @@ from plotly.subplots import make_subplots
 pio.renderers.default = "browser"
 
 
-MIN_PATCH_SIZE = 0.25  # inches
+MIN_PATCH_SIZE = 0.1  # inches
 
 
 class WeldGroup:
@@ -371,8 +371,8 @@ class WeldGroup:
         axs[1].plot(self.x_centroid, self.y_centroid, marker="x",c="red",markersize=8,zorder=2,linestyle="none")
 
         # annotation for weld properties
-        xo = 0.22
-        yo = 0.85
+        xo = 0.12
+        yo = 0.98
         dy = 0.045
         unit = "in"
         axs[0].annotate("Weld Group Properties", 
@@ -654,7 +654,7 @@ class WeldGroup:
         
         
         # annotation for weld properties
-        xo = 0.22
+        xo = 0.12
         yo = 0.98
         dy = 0.045
         axs[0].annotate("Weld Group Properties", 
@@ -712,7 +712,7 @@ class WeldGroup:
             axs[0].annotate(r"$\theta_{{p}} = {:.2f} \quad deg$".format(self.theta_p), 
                             (xo,yo-dy*12), xycoords='axes fraction', fontsize=12, va="top", ha="left")
             
-        xo = 0.22
+        xo = 0.12
         yo = 0.35
         dy = 0.045
         axs[0].annotate("Applied Loading", 
