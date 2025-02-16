@@ -87,21 +87,11 @@ Sign convention shown below:
 
 **Example 1:** Two 8" vertical strips, separated by 6" width, subjected to Vy = -50 kips, and Mx = 120 k.in.
 
-According to the Blodgett textbook formulas:
+Hand calculation using elastic method and formulas in the Blodgett textbook:
 
-$$S_w = d^2/3 = (8)^2/3 = 21.33 in^2$$
-
-$$J_w = \frac{d(3b^2+d^2)}{6} = \frac{8(3(6)^2+8^2)}{6} = 229.33 in^3$$
-
-$$L_w = (8)(2) = 16 in$$
-
-Hand calculated maximum weld unit force:
-
-$$v_{Vy}$$ = V_y/L_w = 50/16 = 3.125 k/in
-
-$$v_{Mx}$$ = M_x/S_w = 120/21.33 = 5.626 k/in
-
-$$v_{resultant} = \sqrt{3.125^2 + 5.626^2} = 6.435 k/in$$
+<div align="center">
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/example1_handcalc.png?raw=true" alt="demo" style="width: 80%;" />
+</div>
 
 This matches ezweld's output:
 
@@ -110,6 +100,14 @@ This matches ezweld's output:
 </div>
 
 
+**Example 2:** A 6" x 6" rectangular weld, subjected to Mx = 240 k.in, and My = 120 k.in.
+
+
+**Example 3:** A C-shaped weld 3" wide, 10" tall subjected to Vy = -50 kips, and Mz = 200 k.in
+
+
+
+**Example 4:** A 12" diameter circular weld, subjected to Vy = -50 kips, and Mz = 120 k.in.
 
 
 

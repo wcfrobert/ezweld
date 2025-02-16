@@ -11,7 +11,7 @@ from plotly.subplots import make_subplots
 pio.renderers.default = "browser"
 
 
-MIN_PATCH_SIZE = 0.1  # inches
+MIN_PATCH_SIZE = 0.05  # inches
 
 
 class WeldGroup:
