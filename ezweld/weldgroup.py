@@ -11,15 +11,12 @@ from plotly.subplots import make_subplots
 pio.renderers.default = "browser"
 
 
-MIN_PATCH_SIZE = 0.05  # inches
-
-
 class WeldGroup:
     """
     WeldGroup objects are numerical representation of welded connections.
     
     Input Arguments:
-        None               
+        PATCH_SIZE      (OPTIONAL)float:: how fine to discretize weld fiber. Default = 0.05 inches       
         
     Public Methods:
         add_line()
@@ -31,7 +28,9 @@ class WeldGroup:
         plot_results()
         plot_results_3D()
     """
-    def __init__(self):
+    def __init__(self, PATCH_SIZE = 0.05):
+        self.PATCH_SIZE = PATCH_SIZE    # how fine to discretize weld patches
+        
         # applied force
         self.Vx = None                  # applied shear horizontal X
         self.Vy = None                  # applied shear vertical Y
@@ -156,7 +155,7 @@ class WeldGroup:
         """
         # calculate circumference to determine number of segments
         circumference = diameter * math.pi
-        segments = int(circumference // MIN_PATCH_SIZE)
+        segments = int(circumference // self.PATCH_SIZE)
         
         # divide into angle increments from 0 to 360
         theta_list = np.linspace(0,360,segments+1)
@@ -192,7 +191,7 @@ class WeldGroup:
         
         # calculate number of segments
         length_line = np.linalg.norm(position_vector)
-        segments = int(length_line // MIN_PATCH_SIZE) if length_line > MIN_PATCH_SIZE else 1
+        segments = int(length_line // self.PATCH_SIZE) if length_line > self.PATCH_SIZE else 1
         length_segments = length_line / (segments)
         
         # discretize into N segments (N+1 end points)
@@ -287,12 +286,15 @@ class WeldGroup:
         self.Sy2 = self.Iy / abs(min(all_x) - self.x_centroid)
         
         # principal axes via Mohr's circle
-        if self.Ix == self.Iy:
+        if math.isclose(self.Ixy, 0, abs_tol=1e-6):
             self.theta_p = 0
         else:
-            self.theta_p = (  math.atan((self.Ixy)/((self.Ix-self.Iy)/2)) / 2) * 180 / math.pi
-        
-        
+            if math.isclose(self.Ix, self.Iy, abs_tol=1e-6):
+                self.theta_p = 45
+            else:
+                self.theta_p = (  math.atan((self.Ixy)/((self.Ix-self.Iy)/2)) / 2) * 180 / math.pi
+
+
         ################ UNIT FORCE CONVENTION #################
         # modify length to account for variable thickness. Proportioned based on min weld thickness
         t_min = min(self.dict_welds["thickness"])
@@ -322,11 +324,14 @@ class WeldGroup:
         self.Sy2_force = self.Iy_force / abs(min(all_x) - self.x_centroid)
         
         # principal axis
-        if self.Ix_force == self.Iy_force:
+        if math.isclose(self.Ixy_force, 0, abs_tol=1e-6):
             self.theta_p_force = 0
         else:
-            self.theta_p_force = (  math.atan((self.Ixy_force)/((self.Ix_force-self.Iy_force)/2)) / 2) * 180 / math.pi    
-            
+            if math.isclose(self.Ix_force, self.Iy_force, abs_tol=1e-6):
+                self.theta_p_force = 45
+            else:
+                self.theta_p_force = (  math.atan((self.Ixy_force)/((self.Ix_force-self.Iy_force)/2)) / 2) * 180 / math.pi
+                
     
     def preview(self):
         """
@@ -883,7 +888,7 @@ class WeldGroup:
         cmax = max(self.df_welds["v_resultant"]) if cmax == "auto" else cmax
         if math.isclose(cmax-cmin, 0):
             cmin = 0
-        sizeref = 1/cmax # fixes arrow scaling issues
+        sizeref = 0.25 * 1/cmax # fixes arrow scaling issues
         # need to use sizemode raw which is not available on older versions of plotly
         custom_hover = '<b>vx</b>: %{u:.2f} k/in<br>' +\
             '<b>vy</b>: %{v:.2f} k/in<br>' +\
