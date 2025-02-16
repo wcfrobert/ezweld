@@ -93,16 +93,22 @@ Hand calculation using elastic method and formulas in the Blodgett textbook:
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/example1_handcalc.png?raw=true" alt="demo" style="width: 65%;" />
 </div>
 
-Results produced by ezweld matches hand calculation almost exactly. 
-
-> [!IMPORTANT] 
-> The small discrepancy in max stress is due to how the weld group is discretized. Each "fiber" is 0.05" in length, and its associated stress is calculated at the centroid. Therefore, the top-most extreme fiber's centroid is actually 0.025" from the actual top. To improve numerical accuracy,
-the user may wish to set a smaller patch size.
-> 
+Results produced by ezweld matches hand calculation almost exactly.
 
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/example1.png?raw=true" alt="demo" style="width: 65%;" />
 </div>
+
+> [!IMPORTANT] 
+> The small discrepancy (0.04 k/in) between numerical and theoretical result is due to how the weld group is discretized. Each fiber is 0.05" in length, and its associated stress is calculated at the **centroid**. Therefore, the top-most extreme fiber's centroid is actually 0.025" from the actual top. To improve numerical accuracy, the user may wish to set a smaller patch size. 
+
+Default patch size is 0.1". To set a smaller patch size, initialize the weld group with the PATCH_SIZE argument: `weld_group = ezweld.WeldGroup(PATCH_SIZE=0.01)`. 
+
+In the example above, we know $I_x = 85.33 in^3$, $M_x = 120 k.in$, and if we use $c = (4 - 0.025) = 3.975$
+
+$$v_{Mx} = Mc/I = 120(3.975)/85.33 = 5.59 k/in \quad \mbox{compared to 5.62 k/in theoretical}$$
+
+$$v_max = \sqrt{(3.125)^2 + (5.59)^2} = 6.404 k/in \quad \mbox{compared to 6.435 k/in theoretical}$$
 
 
 **Example 2:** A 6" x 6" rectangular weld, subjected to Mx = 240 k.in, and My = 120 k.in.
