@@ -62,7 +62,7 @@ Sign convention shown below:
 `weld_group.preview()` returns a matplotlib figure showing what the weld group looks like and its geometric properties.
 
 <div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/plot0.png?raw=true" alt="demo" style="width: 80%;" />
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/plot0.png?raw=true" alt="demo" style="width: 60%;" />
 </div>
 
 `weld_group.solve()` returns a pandas dataframe containing all the results.
@@ -74,7 +74,7 @@ Sign convention shown below:
 `weld_group.plot_results()` returns a matplotlib 2D figure.
 
 <div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/plot1.png?raw=true" alt="demo" style="width: 80%;" />
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/plot1.png?raw=true" alt="demo" style="width: 60%;" />
 </div>
 
 `weld_group.plot_results_3D()` returns interactive plotly 3D figure .
@@ -90,26 +90,50 @@ Sign convention shown below:
 Hand calculation using elastic method and formulas in the Blodgett textbook:
 
 <div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/example1_handcalc.png?raw=true" alt="demo" style="width: 80%;" />
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/example1_handcalc.png?raw=true" alt="demo" style="width: 65%;" />
 </div>
 
-This matches ezweld's output:
+Results produced by ezweld matches hand calculation almost exactly. 
+
+> [!IMPORTANT] 
+> The small discrepancy in max stress is due to how the weld group is discretized. Each "fiber" is 0.05" in length, and its associated stress is calculated at the centroid. Therefore, the top-most extreme fiber's centroid is actually 0.025" from the actual top. To improve numerical accuracy,
+the user may wish to set a smaller patch size.
+> 
 
 <div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/example1.png?raw=true" alt="demo" style="width: 80%;" />
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/example1.png?raw=true" alt="demo" style="width: 65%;" />
 </div>
 
 
 **Example 2:** A 6" x 6" rectangular weld, subjected to Mx = 240 k.in, and My = 120 k.in.
 
+<div align="center">
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/example2_handcalc.png?raw=true" alt="demo" style="width: 65%;" />
+</div>
+
+<div align="center">
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/example2.png?raw=true" alt="demo" style="width: 65%;" />
+</div>
 
 **Example 3:** A C-shaped weld 3" wide, 10" tall subjected to Vy = -50 kips, and Mz = 200 k.in
 
+<div align="center">
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/example3_handcalc.png?raw=true" alt="demo" style="width: 65%;" />
+</div>
 
+<div align="center">
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/example3.png?raw=true" alt="demo" style="width: 65%;" />
+</div>
 
 **Example 4:** A 12" diameter circular weld, subjected to Vy = -50 kips, and Mz = 120 k.in.
 
+<div align="center">
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/example4_handcalc.png?raw=true" alt="demo" style="width: 65%;" />
+</div>
 
+<div align="center">
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/example4.png?raw=true" alt="demo" style="width: 65%;" />
+</div>
 
 ## Installation
 
