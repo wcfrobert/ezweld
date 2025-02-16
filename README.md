@@ -15,7 +15,7 @@
 
 
 - [Quick Start](#quick-start)
-- [Validation](#validation)
+- [Validation Examples](#validation-examples)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Theoretical Background](#theoretical-background)
@@ -83,7 +83,7 @@ Sign convention shown below:
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/demo.gif?raw=true" alt="demo" style="width: 80%;" />
 </div>
 
-## Validation
+## Validation Examples
 
 **Example 1:** Two 8" vertical strips, separated by 6" width, subjected to Vy = -50 kips, and Mx = 120 k.in.
 
@@ -235,11 +235,11 @@ Welds enable force transfer between two connected members. At the plane of conne
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_comparison.png?raw=true" alt="demo" style="width: 50%;" />
 </div>
 
-First, we need to calculate the weld group's geometric properties. EZweld does so by discretizing the weld group into little patches then applying the parallel axis theorem.
+First, we need to calculate the weld group's geometric properties. EZweld does so by discretizing the weld group into little patches to approximate the integral with summations.
 
 Area:
 
-$$A_w =  \iint dA = \sum t_i L_i$$
+$$A_w =  \int_A dA = \sum t_i L_i$$
 
 
 
@@ -253,11 +253,11 @@ $$y_{cg} = \frac{\sum y_iA_i}{\sum A}$$
 
 Moment of Inertia:
 
-$$I_x = \iint y^2 dA= \sum y_i^2A_i$$
+$$I_x = \int_A y^2 dA= \sum y_i^2A_i$$
 
-$$I_y = \iint x^2 dA = \sum x_i^2A_i$$
+$$I_y = \int_A x^2 dA = \sum x_i^2A_i$$
 
-$$I_{xy} = \iint xydA = \sum x_i y_i A_i$$
+$$I_{xy} = \int_A xydA = \sum x_i y_i A_i$$
 
 $$I_z = J = I_p = I_x + I_y$$
 
