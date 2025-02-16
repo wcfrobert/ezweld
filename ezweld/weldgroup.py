@@ -744,7 +744,7 @@ class WeldGroup:
         plt.tight_layout()
     
     
-    def plot_results_3D(self, colormap="jet", cmin="auto", cmax="auto"):
+    def plot_results_3D_deprecated(self, colormap="jet", cmin="auto", cmax="auto"):
         """
         use plotly to generate an interactive plot
         """     
@@ -888,7 +888,7 @@ class WeldGroup:
         cmax = max(self.df_welds["v_resultant"]) if cmax == "auto" else cmax
         if math.isclose(cmax-cmin, 0):
             cmin = 0
-        sizeref = 0.25 * 1/cmax # fixes arrow scaling issues
+        sizeref = 0.35 * 1/cmax # fixes arrow scaling issues
         # need to use sizemode raw which is not available on older versions of plotly
         custom_hover = '<b>vx</b>: %{u:.2f} k/in<br>' +\
             '<b>vy</b>: %{v:.2f} k/in<br>' +\
@@ -907,7 +907,7 @@ class WeldGroup:
                             colorscale=colormap,
                             cmin=cmin,
                             cmax=cmax,
-                            sizemode = "raw",
+                            sizemode = "raw", #very new in plotly...
                             sizeref = sizeref)
         fig.add_trace(cone_plot, row=1, col=2)
         
@@ -943,6 +943,297 @@ class WeldGroup:
                           )
         fig.show()
         return fig
+    
+    
+    def plot_results_3D(self, colormap="jet", cmin="auto", cmax="auto", scale=0.2):
+        """
+        use plotly to generate an interactive plot
+        """     
+        # initialize a plotly figure with 2 subplots
+        fig = make_subplots(rows=2, cols=2,
+                            subplot_titles=("Weld Group Properties", "Vector Plot", "Applied Loading"),
+                            column_widths=[0.3, 0.7],
+                            row_heights=[0.65, 0.35],
+                            horizontal_spacing=0.02,
+                            vertical_spacing=0.05,
+                            specs = [[{"type":"table"}, {"type":"scene","rowspan":2}],
+                                     [{"type":"table"}, None],
+                                     ])
+        
+        # properties table
+        table_properties = [r"$x_{{cg}}$",
+                     r"$y_{{cg}}$",
+                     r"$L$",
+                     r"$L_e$",
+                     r"$I_{x}$",
+                     r"$I_{y}$",
+                     r"$I_{z}$",
+                     r"$S_{{x,top}}$",
+                     r"$S_{{x,bottom}}$",
+                     r"$S_{{y,right}}$",
+                     r"$S_{{y,left}}$"]
+        table_values = [r"${:.2f} \quad in$".format(self.x_centroid_force),
+                        r"${:.2f} \quad in$".format(self.y_centroid_force),
+                        r"${:.1f} \quad in$".format(self.L_force),
+                        r"${:.1f} \quad in$".format(self.Le_force),
+                        r"${:.1f} \quad in^3$".format(self.Ix_force),
+                        r"${:.1f} \quad in^3$".format(self.Iy_force),
+                        r"${:.1f} \quad in^3$".format(self.Iz_force),
+                        r"${:.1f} \quad in^2$".format(self.Sx1_force),
+                        r"${:.1f} \quad in^2$".format(self.Sx2_force),
+                        r"${:.1f} \quad in^2$".format(self.Sy1_force),
+                        r"${:.1f} \quad in^2$".format(self.Sy2_force)]
+        property_table = go.Table(header_values = ['Parameters', 'Value'],
+                                  header_line_color = "black",
+                                  header_font_color = "white",
+                                  header_fill_color = "#3b3b41",
+                                  header_align = "center",
+                                  header_font_size = 18,
+                                  header_height = 34,
+                                  cells_values = [table_properties, table_values],
+                                  cells_line_color = "black",
+                                  cells_font_color = "black",
+                                  cells_fill_color = "white",
+                                  cells_align = "center",
+                                  cells_font_size = 22,
+                                  cells_height = 34,
+                                  )
+        fig.add_trace(property_table, row=1, col=1)
+        
+        # applied force table
+        table_properties = [r"$V_x$",
+                            r"$V_y$",
+                            r"$V_z$",
+                            r"$M_x$",
+                            r"$M_y$",
+                            r"$M_z$"]
+        table_values = [r"${:.1f} \quad kips$".format(self.Vx),
+                        r"${:.1f} \quad kips$".format(self.Vy),
+                        r"${:.1f} \quad kips$".format(self.Vz),
+                        r"${:.1f} \quad k.in$".format(self.Mx),
+                        r"${:.1f} \quad k.in$".format(self.My),
+                        r"${:.1f} \quad k.in$".format(self.Mz)]
+        property_table = go.Table(header_values = ['Applied Load', 'Value'],
+                                  header_line_color = "black",
+                                  header_font_color = "white",
+                                  header_fill_color = "#3b3b41",
+                                  header_align = "center",
+                                  header_font_size = 18,
+                                  header_height = 34,
+                                  cells_values = [table_properties, table_values],
+                                  cells_line_color = "black",
+                                  cells_font_color = "black",
+                                  cells_fill_color = "white",
+                                  cells_align = "center",
+                                  cells_font_size = 22,
+                                  cells_height = 34,
+                                  )
+        fig.add_trace(property_table, row=2, col=1)
+        
+        
+        # plot orgin marker at centroid
+        xmax = max(self.dict_welds["x_centroid"])
+        xmin = min(self.dict_welds["x_centroid"])
+        ymax = max(self.dict_welds["y_centroid"])
+        ymin = min(self.dict_welds["y_centroid"])
+        dmax = max(xmax-xmin, ymax-ymin)/1.5
+        X = go.Scatter3d(
+            x=[self.x_centroid, self.x_centroid + dmax/14],
+            y=[self.y_centroid, self.y_centroid],
+            z=[0,0],
+            mode='lines+text',
+            hoverinfo = 'skip',
+            showlegend=False,
+            line=dict(color='blue', width=5),
+            text=["","X"],
+            textposition="top center",
+            textfont=dict(
+                family="Arial",
+                size=14,
+                color="blue"))
+        fig.add_trace(X, row=1, col=2)
+        Y = go.Scatter3d(
+            x=[self.x_centroid, self.x_centroid],
+            y=[self.y_centroid, self.y_centroid + dmax/14],
+            z=[0,0],
+            mode='lines+text',
+            hoverinfo = 'skip',
+            line=dict(color='red', width=5),
+            text=["","Y"],
+            textposition="top center",
+            showlegend=False,
+            textfont=dict(
+                family="Arial",
+                size=14,
+                color="red"))
+        fig.add_trace(Y,row=1, col=2)
+        Z = go.Scatter3d(
+            x=[self.x_centroid, self.x_centroid],
+            y=[self.y_centroid, self.y_centroid],
+            z=[0, 0 + dmax/14],
+            mode='lines+text',
+            hoverinfo = 'skip',
+            line=dict(color='green', width=5),
+            text=["","Z"],
+            textposition="top center",
+            showlegend=False,
+            textfont=dict(
+                family="Arial",
+                size=14,
+                color="green"))
+        fig.add_trace(Z, row=1, col=2)
+        
+        # prep colormap
+        cm = plt.get_cmap(colormap)
+        magnitude = self.dict_welds["v_resultant"]
+        cmin = min(magnitude) if cmin == "auto" else cmin
+        cmax = max(magnitude) if cmax == "auto" else cmax
+        if math.isclose(cmax-cmin, 0):
+            cmin = 0
+        
+        # plot weld stress vectors
+        x_lines = []
+        y_lines = []
+        z_lines = []
+        xyz_dot = [[],[],[]]
+        line_colors = []
+        hover_text = []
+        LENGTH_SF = scale
+        for i in range(len(self.df_welds["x_centroid"])):
+            # first point (on Z=0 plane)
+            x0 = self.df_welds["x_centroid"][i]
+            y0 = self.df_welds["y_centroid"][i]
+            z0 = 0
+            xyz0_array = np.array([x0,y0,z0])
+            
+            # second point
+            u = self.df_welds["vx_total"][i]
+            v = self.df_welds["vy_total"][i]
+            w = self.df_welds["vz_total"][i]
+            resultant = self.df_welds["v_resultant"][i]
+            uvw_array = np.array([u,v,w])
+            xyz1_array = xyz0_array + LENGTH_SF * uvw_array
+            
+            # add to list of plot lines
+            x_lines.extend([xyz0_array[0], xyz1_array[0], None])
+            y_lines.extend([xyz0_array[1], xyz1_array[1], None])
+            z_lines.extend([xyz0_array[2], xyz1_array[2], None])
+            
+            # add to list of plot scatters
+            xyz_dot[0].append(xyz0_array[0])
+            xyz_dot[1].append(xyz0_array[1])
+            xyz_dot[2].append(xyz0_array[2])
+            
+            # add to list of colors
+            magnitude = self.dict_welds["v_resultant"][i]
+            magnitude_normalized = (magnitude-cmin)/(cmax-cmin)
+            rgb01 = cm(magnitude_normalized)
+            rgb255 = [a * 255 for a in rgb01]
+            rgb_str = f"rgb({rgb255[0]},{rgb255[1]},{rgb255[2]})"
+            line_colors.append(rgb_str)
+            line_colors.append(rgb_str)
+            line_colors.append("white")
+            
+            # add to list of hoverinfo
+            custom_hover = '<b>Vx</b>: {:.2f} k/in<br>'.format(u) +\
+                '<b>Vy</b>: {:.2f} k/in<br>'.format(v) +\
+                '<b>Vz</b>: {:.2f} k/in<br>'.format(w) +\
+                '<b>V_resultant</b>: {:.2f} k/in<br>'.format(resultant)
+            hover_text.append(custom_hover)
+            
+        # prep work before plotting vectors
+        hovertemplate = '<b>coord: (%{x:.1f}, %{y:.1f}, %{z:.1f})</b><br>' + '%{text}<extra></extra>'
+        _cmin = min(self.dict_welds["v_resultant"])
+        _cmax = max(self.dict_welds["v_resultant"])
+        tick_interval = np.linspace(_cmin, _cmax, 9)
+        tick_interval_str = [f"{x:.2f}" for x in tick_interval]
+        
+        # plot vectors
+        vector_line = go.Scatter3d(x=x_lines,
+                                      y=y_lines,
+                                      z=z_lines,
+                                      mode='lines',
+                                      line_width = 8,
+                                      line_color = line_colors,
+                                      showlegend = False,
+                                      hoverinfo="none")
+        vector_base = go.Scatter3d(x=xyz_dot[0],
+                                      y=xyz_dot[1],
+                                      z=xyz_dot[2],
+                                      mode='markers',
+                                      marker_symbol = "square",
+                                      marker_size = 8,
+                                      showlegend = False,
+                                      hovertemplate = hovertemplate,
+                                      text = hover_text,
+                                      hoverlabel_font_size=16,
+                                      marker_color=self.df_welds["v_resultant"],
+                                      marker_colorscale=colormap,
+                                      marker_showscale=True,
+                                      marker_colorbar=dict(title_text="k/in",
+                                                           outlinecolor="black",
+                                                           outlinewidth=2,
+                                                           tickvals=tick_interval,
+                                                           ticktext=tick_interval_str,
+                                                           xpad=40,
+                                                           ypad=40)
+                                      )
+        fig.add_trace(vector_base, row=1, col=2)
+        fig.add_trace(vector_line, row=1, col=2)
+        
+        # change such that axes are in proportion.
+        fig.update_scenes(aspectmode="data")
+        
+        # add title
+        fig.update_layout(title="<b>Weld Group Result Summary</b>",
+                          title_xanchor="center",
+                          title_font_size=22,
+                          title_x=0.5, 
+                          title_y=0.98,
+                          title_font_color="black")
+        
+        # background color
+        fig.update_layout(paper_bgcolor="white",
+                          font_color="black")
+        
+        # adjust zoom level and default camera position
+        fig.update_scenes(camera_eye=dict(x=2, y=2, z=2))
+        
+        # change origin to be on the bottom left corner
+        fig.update_scenes(xaxis_autorange="reversed")
+        fig.update_scenes(yaxis_autorange="reversed")
+        fig.update_scenes(xaxis_backgroundcolor="white",
+                          yaxis_backgroundcolor="white",
+                          xaxis_gridcolor="grey",
+                          yaxis_gridcolor="grey",
+                          xaxis_gridwidth=0.5,
+                          yaxis_gridwidth=0.5,
+                          zaxis_visible=False,
+                          )
+        fig.show()
+        return fig
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
