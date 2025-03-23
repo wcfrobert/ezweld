@@ -235,7 +235,7 @@ Welds enable force transfer between two connected members. At the plane of conne
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_comparison.png?raw=true" alt="demo" style="width: 50%;" />
 </div>
 
-First, we need to calculate the weld group's geometric properties. EZweld does so by discretizing the weld group into little patches to approximate the integral with summations.
+First, we need to calculate the weld group's geometric properties. EZweld does so by discretizing the weld group into infinitesmially small patches to approximate the integral with summations.
 
 Area:
 
@@ -253,11 +253,11 @@ $$y_{cg} = \frac{\sum y_iA_i}{\sum A}$$
 
 Moment of Inertia:
 
-$$I_x = \int_A y^2 dA= \sum y_i^2A_i$$
+$$I_x = \int_A y^2 dA \approx \sum y_i^2A_i$$
 
-$$I_y = \int_A x^2 dA = \sum x_i^2A_i$$
+$$I_y = \int_A x^2 dA \approx \sum x_i^2A_i$$
 
-$$I_{xy} = \int_A xydA = \sum x_i y_i A_i$$
+$$I_{xy} = \int_A xydA \approx \sum x_i y_i A_i$$
 
 $$I_z = J = I_p = I_x + I_y$$
 
@@ -288,13 +288,32 @@ Notations:
 
 
 
+For **weld groups composed of series of straight segments**, we can use these set of generalized formula:
+
+$$A_w = \sum t_iL_i$$
+
+$$I_x = \sum  \frac{t_i L_i}{3} (y_1^2 + y_1y_2 + y_2^2)$$
+
+$$I_y = \sum  \frac{t_i L_i}{3} (x_1^2 + x_1x_2 + x_2^2)$$
+
+The formula above comes from solving the line integral $\int x^2ds$ or $\int y^2ds$ over a straight arc segment starting at $(x_1, y_1)$ and ending at $(x_2, y_2)$.
+
+
+
 **Force/Length Convention - Treating Welds as Lines**
 
-Here is a weld group geometric properties table from Omer W. Blodgett textbook. Notice how the equations have one dimensions less.
+Here is a weld group geometric properties table from Omer W. Blodgett textbook. Notice how the formulas in the previous section have one dimensions less.
 
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_properties.png?raw=true" alt="demo" style="width: 50%;" />
 </div>
+I rarely use the formulas above because they can all be generalized (with the exception of the circle) as:
+
+$$L_w = \sum L_i$$
+
+$$I_x = \sum  \frac{L_i}{3} (y_1^2 + y_1y_2 + y_2^2)$$
+
+$$I_y = \sum  \frac{L_i}{3} (x_1^2 + x_1x_2 + x_2^2)$$
 
 In the structural engineering context, welds are often thought of as 1-dimensional "lines". As such, results are often expressed as **force per unit length** (e.g. kip/in) rather than force per unit area (e.g. ksi). But why introduce another layer of complication when the stress formulas are completely fine? 
 
