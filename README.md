@@ -296,7 +296,7 @@ $$I_x = \sum  \frac{t_i L_i}{3} (y_1^2 + y_1y_2 + y_2^2)$$
 
 $$I_y = \sum  \frac{t_i L_i}{3} (x_1^2 + x_1x_2 + x_2^2)$$
 
-The formula above comes from solving the line integral $\int x^2ds$ or $\int y^2ds$ over a straight arc segment starting at $(x_1, y_1)$ and ending at $(x_2, y_2)$.
+The formula above comes from solving the line integral $\int x^2ds$ or $\int y^2ds$ over a straight arc segment starting at $(x_1, y_1)$ and ending at $(x_2, y_2)$. The $(x,y)$ coordinates must be with respect to the weld group centroid.
 
 
 
@@ -307,7 +307,7 @@ Here is a weld group geometric properties table from Omer W. Blodgett textbook. 
 <div align="center">
   <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_properties.png?raw=true" alt="demo" style="width: 50%;" />
 </div>
-I rarely use the formulas above because they can all be generalized (with the exception of the circle) as:
+I rarely use the formulas above because they can all be generalized (with the exception of the circle). The $(x,y)$ coordinates must be with respect to the weld group centroid.
 
 $$L_w = \sum L_i$$
 
