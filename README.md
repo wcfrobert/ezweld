@@ -288,32 +288,28 @@ Notations:
 
 
 
-For **weld groups composed of series of straight segments**, we can use these set of generalized formula:
+For common weld configurations, the section modulus ($S_w$) and polar moment of inertia ($J_w$) can be determined using the formulas below (from the Omer W. Blodgett textbook). Notice how the formulas have one dimensions less. We will discuss the use of force-per-unit-length convention in the next section.
 
-$$A_w = \sum t_iL_i$$
+<div align="center">
+  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_properties.png?raw=true" alt="demo" style="width: 50%;" />
+</div>
+Rather than using the formulas below. It is possible to derive a more generalized formula that applies for all weld groups (provided they are made of series of straight segments). First determine the weld group centroid:
+
+$$x_{cg} = \frac{\sum x_iA_i}{\sum A}$$
+
+$$y_{cg} = \frac{\sum y_iA_i}{\sum A}$$
+
+Then, divide the weld group into individual line segments starting at $(x_1, y_1)$ and ending at $(x_2, y_2)$ with respect to the weld group centroid. The total moment of inertia can then be calculated using the equation below. The formula below comes from solving the line integral $\int x^2ds$ or $\int y^2ds$ for each line segment.
 
 $$I_x = \sum  \frac{t_i L_i}{3} (y_1^2 + y_1y_2 + y_2^2)$$
 
 $$I_y = \sum  \frac{t_i L_i}{3} (x_1^2 + x_1x_2 + x_2^2)$$
 
-The formula above comes from solving the line integral $\int x^2ds$ or $\int y^2ds$ over a straight arc segment starting at $(x_1, y_1)$ and ending at $(x_2, y_2)$. The $(x,y)$ coordinates must be with respect to the weld group centroid.
+
 
 
 
 **Force/Length Convention - Treating Welds as Lines**
-
-Here is a weld group geometric properties table from Omer W. Blodgett textbook. Notice how the formulas in the previous section have one dimensions less.
-
-<div align="center">
-  <img src="https://github.com/wcfrobert/ezweld/blob/master/doc/weld_properties.png?raw=true" alt="demo" style="width: 50%;" />
-</div>
-I rarely use the formulas above because they can all be generalized (with the exception of the circle). The $(x,y)$ coordinates must be with respect to the weld group centroid.
-
-$$L_w = \sum L_i$$
-
-$$I_x = \sum  \frac{L_i}{3} (y_1^2 + y_1y_2 + y_2^2)$$
-
-$$I_y = \sum  \frac{L_i}{3} (x_1^2 + x_1x_2 + x_2^2)$$
 
 In the structural engineering context, welds are often thought of as 1-dimensional "lines". As such, results are often expressed as **force per unit length** (e.g. kip/in) rather than force per unit area (e.g. ksi). But why introduce another layer of complication when the stress formulas are completely fine? 
 
