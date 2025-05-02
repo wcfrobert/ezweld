@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ezweld"
-version = "0.1.0"
+version = "0.2.1"
 authors = [
   { name="wcfrobert", email="temprobertdev@gmail.com" },
 ]
@@ -17,6 +17,19 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy>=2.0",
+    "pandas>=2.0",
+    "matplotlib>=3.0",
+    "plotly>=5.0",
+]
+keywords = [
+    "structural engineering",
+    "welding",
+    "steel",
+    "connections",
+    "weld stress"
 ]
 
 [project.urls]
